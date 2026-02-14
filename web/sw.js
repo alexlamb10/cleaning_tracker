@@ -27,7 +27,20 @@ self.addEventListener('push', function (event) {
 self.addEventListener('notificationclick', function (event) {
     console.log('[Service Worker] Notification click Received.');
     event.notification.close();
+
     event.waitUntil(
-        clients.openWindow('/')
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
+            // If a window is already open, focus it
+            for (var i = 0; i < clientList.length; i++) {
+                var client = clientList[i];
+                if ('focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Otherwise open a new one
+            if (clients.openWindow) {
+                return clients.openWindow('/');
+            }
+        })
     );
 });
