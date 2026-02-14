@@ -15,96 +15,136 @@ class RoomDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return GradientBackground(
       child: Scaffold(
-        appBar: AppBar(
-          title: Row(
+        body: SafeArea(
+          child: Column(
             children: [
-              Text(room.icon, style: const TextStyle(fontSize: 24)),
-              const SizedBox(width: 8),
-              Text(room.name),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // TODO: Implement edit room
-              },
-              child: const Text('Edit', style: TextStyle(color: Colors.black87)),
-            ),
-          ],
-        ),
-        body: Consumer<DataService>(
-          builder: (context, dataService, child) {
-            final tasks = dataService.getTasksForRoom(room.id);
-
-            if (tasks.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+              // Header with back and edit buttons
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.task_outlined, size: 80, color: Colors.grey),
-                    const SizedBox(height: 16),
-                    const Text('No tasks yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                    const SizedBox(height: 24),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => AddTaskScreen(preselectedRoomId: room.id),
+                    // Back button
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
                           ),
-                        );
-                      },
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add First Task'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5FCBAA),
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, size: 20),
+                        onPressed: () => Navigator.pop(context),
+                        padding: EdgeInsets.zero,
+                      ),
+                    ),
+                    // Edit button
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Text(
+                        'Edit',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
                         ),
                       ),
                     ),
                   ],
                 ),
-              );
-            }
-
-            return Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => AddTaskScreen(preselectedRoomId: room.id),
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Task'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF5FCBAA),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+              ),
+              // Room title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    room.name,
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
                     ),
                   ),
                 ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      return TaskCard(task: tasks[index]);
-                    },
+              ),
+              // + Task button
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AddTaskScreen(preselectedRoomId: room.id),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Task'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5FCBAA),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 2,
                   ),
                 ),
-              ],
-            );
-          },
+              ),
+              // Task list
+              Expanded(
+                child: Consumer<DataService>(
+                  builder: (context, dataService, child) {
+                    final tasks = dataService.getTasksForRoom(room.id);
+
+                    if (tasks.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.task_outlined, size: 80, color: Colors.grey[300]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No tasks yet',
+                              style: TextStyle(fontSize: 18, color: Colors.grey[400]),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(top: 8),
+                      itemCount: tasks.length,
+                      itemBuilder: (context, index) {
+                        return TaskCard(task: tasks[index]);
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
