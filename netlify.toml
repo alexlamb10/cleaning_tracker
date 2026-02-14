@@ -1,3 +1,4 @@
+# Netlify deployment configuration
 [[redirects]]
   from = "/*"
   to = "/index.html"
