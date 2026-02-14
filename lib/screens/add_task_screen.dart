@@ -1,7 +1,4 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:cleaning_tracker/services/data_service.dart';
-import 'package:cleaning_tracker/models/models.dart';
+import 'package:cleaning_tracker/widgets/circular_progress_wheel.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final String? preselectedRoomId;
@@ -19,7 +16,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   
   FrequencyUnit _frequencyUnit = FrequencyUnit.weeks;
   String? _selectedRoomId;
-  int _initialCleanliness = 100; // 0 to 100 percent
+  double _initialCleanliness = 1.0; // 0.0 to 1.0
 
   @override
   void initState() {
@@ -33,6 +30,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _nameController.dispose();
     _frequencyController.dispose();
     super.dispose();
+  }
+  
+  String _getCleanlinessText() {
+    if (_initialCleanliness >= 0.9) return "Spotless!";
+    if (_initialCleanliness >= 0.7) return "Pretty clean";
+    if (_initialCleanliness >= 0.5) return "It's ok";
+    if (_initialCleanliness >= 0.3) return "Getting dirty";
+    return "Needs cleaning";
   }
 
   @override
@@ -219,52 +224,30 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               'Current Status:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Center(
-              child: Container(
-                height: 120,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[300]!),
-                ),
-                child: ListWheelScrollView.useDelegate(
-                  itemExtent: 40,
-                  physics: const FixedExtentScrollPhysics(),
-                  controller: FixedExtentScrollController(initialItem: 100),
-                  onSelectedItemChanged: (index) {
-                    setState(() {
-                      // Index 0 = 0%, Index 100 = 100%
-                      // Clamped to 0-100 just in case
-                      _initialCleanliness = index.clamp(0, 100);
-                    });
-                  },
-                  childDelegate: ListWheelChildBuilderDelegate(
-                    builder: (context, index) {
-                      if (index < 0 || index > 100) return null;
-                      final isSelected = _initialCleanliness == index;
-                      return Center(
-                        child: Text(
-                          '$index% ${index == 100 ? "(Freshly Cleaned)" : index == 0 ? "(Needs Cleaning)" : ""}',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? const Color(0xFF5FCBAA) : Colors.grey,
-                          ),
-                        ),
-                      );
+              child: Column(
+                children: [
+                  CircularProgressWheel(
+                    progress: _initialCleanliness,
+                    size: 180,
+                    onProgressChanged: (value) {
+                      setState(() {
+                        _initialCleanliness = value;
+                      });
                     },
-                    childCount: 101,
                   ),
-                ),
+                  const SizedBox(height: 20),
+                  Text(
+                    _getCleanlinessText(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Set the current cleanliness level from 0% to 100%',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
@@ -276,7 +259,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     roomId: _selectedRoomId!,
                     frequencyValue: int.parse(_frequencyController.text),
                     frequencyUnit: _frequencyUnit,
-                    initialCleanliness: _initialCleanliness / 100.0,
+                    initialCleanliness: _initialCleanliness,
                   );
                   if (context.mounted) {
                     Navigator.pop(context);

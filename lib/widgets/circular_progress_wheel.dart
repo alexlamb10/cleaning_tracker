@@ -48,12 +48,27 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
     );
     
     // Convert angle to progress (0 to 1)
-    // Start from top (270 degrees) and go clockwise
-    double progress = (angle + pi / 2) / (2 * pi);
-    if (progress < 0) progress += 1;
+    // Start from top (270 degrees/-pi/2) and go clockwise
+    double normalizedAngle = angle + pi / 2;
+    if (normalizedAngle < 0) normalizedAngle += 2 * pi;
+    
+    double newProgress = normalizedAngle / (2 * pi);
+    
+    // Prevent wrapping logic
+    // If the jump is too large (likely crossing the 0/1 boundary), clamp to the nearest end
+    const wrapThreshold = 0.5;
+    if ((newProgress - _currentProgress).abs() > wrapThreshold) {
+      if (newProgress < _currentProgress) {
+        // Wrapped clockwise (e.g. 0.9 -> 0.1). Clamp to 1.0
+        newProgress = 1.0;
+      } else {
+        // Wrapped counter-clockwise (e.g. 0.1 -> 0.9). Clamp to 0.0
+        newProgress = 0.0;
+      }
+    }
     
     setState(() {
-      _currentProgress = progress.clamp(0.0, 1.0);
+      _currentProgress = newProgress.clamp(0.0, 1.0);
     });
     
     widget.onProgressChanged?.call(_currentProgress);
