@@ -65,29 +65,23 @@
       console.log('Attempting notification:', title, body);
 
       if (!("Notification" in window)) {
-        alert("This browser does not support desktop notification");
+        console.log("This browser does not support desktop notification");
         return false;
       }
 
       if (Notification.permission === 'granted') {
         try {
-          // Direct notification 
           new Notification(title, { body: body, icon: '/icons/logo.svg' });
           return true;
         } catch (e) {
           console.error('Notification creation failed:', e);
-          alert('Error showing notification: ' + e.message);
         }
-      } else if (Notification.permission !== 'denied') {
+      } else {
         Notification.requestPermission().then(function (permission) {
           if (permission === "granted") {
             new Notification(title, { body: body, icon: '/icons/logo.svg' });
-          } else {
-            alert('Notification permission denied.');
           }
         });
-      } else {
-        alert('Notifications are disabled/denied for this site. Please check your browser settings.');
       }
       return false;
     };
