@@ -73,9 +73,14 @@ class DataService extends ChangeNotifier {
   Future<void> addTask({
     required String name,
     required String roomId,
-    required int frequencyDays,
+    required int frequencyValue,
+    required FrequencyUnit frequencyUnit,
     required bool justCleaned,
   }) async {
+    final frequencyDays = frequencyUnit == FrequencyUnit.weeks 
+        ? frequencyValue * 7 
+        : frequencyValue;
+
     final lastCompleted = justCleaned
         ? DateTime.now()
         : DateTime.now().subtract(Duration(days: frequencyDays));
@@ -84,7 +89,8 @@ class DataService extends ChangeNotifier {
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
       roomId: roomId,
-      frequencyDays: frequencyDays,
+      frequencyValue: frequencyValue,
+      frequencyUnit: frequencyUnit,
       lastCompletedDate: lastCompleted,
       createdAt: DateTime.now(),
     );
@@ -134,7 +140,7 @@ class DataService extends ChangeNotifier {
     return _tasks.where((t) => t.roomId == roomId).toList();
   }
 
-  Future<void> updateTaskFrequency(String taskId, int newFrequency) async {
+  Future<void> updateTaskFrequency(String taskId, int newValue, FrequencyUnit newUnit) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       final task = _tasks[index];
@@ -142,7 +148,8 @@ class DataService extends ChangeNotifier {
         id: task.id,
         name: task.name,
         roomId: task.roomId,
-        frequencyDays: newFrequency,
+        frequencyValue: newValue,
+        frequencyUnit: newUnit,
         lastCompletedDate: task.lastCompletedDate,
         createdAt: task.createdAt,
         cleanlinessLevel: task.cleanlinessLevel,

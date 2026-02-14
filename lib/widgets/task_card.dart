@@ -13,7 +13,8 @@ class TaskCard extends StatelessWidget {
   void _showTaskDetailDialog(BuildContext context) {
     final dataService = context.read<DataService>();
     double tempLevel = dataService.getCalculatedCleanlinessLevel(task);
-    int tempFrequency = task.frequencyDays;
+    int tempFrequencyValue = task.frequencyValue;
+    FrequencyUnit tempFrequencyUnit = task.frequencyUnit;
 
     showDialog(
       context: context,
@@ -175,9 +176,9 @@ class TaskCard extends StatelessWidget {
                               child: IconButton(
                                 icon: const Icon(Icons.remove, size: 16),
                                 onPressed: () {
-                                  if (tempFrequency > 1) {
+                                  if (tempFrequencyValue > 1) {
                                     setState(() {
-                                      tempFrequency--;
+                                      tempFrequencyValue--;
                                     });
                                   }
                                 },
@@ -189,7 +190,7 @@ class TaskCard extends StatelessWidget {
                             SizedBox(
                               width: 50,
                               child: Text(
-                                '$tempFrequency',
+                                '$tempFrequencyValue',
                                 textAlign: TextAlign.center,
                                 style: const TextStyle(
                                   fontSize: 24,
@@ -211,7 +212,7 @@ class TaskCard extends StatelessWidget {
                                 icon: const Icon(Icons.add, size: 16),
                                 onPressed: () {
                                   setState(() {
-                                    tempFrequency++;
+                                    tempFrequencyValue++;
                                   });
                                 },
                                 padding: EdgeInsets.zero,
@@ -220,13 +221,36 @@ class TaskCard extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          tempFrequency == 1 ? 'Week' : 'Weeks',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF5FCBAA),
-                            fontWeight: FontWeight.w600,
-                          ),
+                        // Unit selection
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            GestureDetector(
+                              onTap: () => setState(() => tempFrequencyUnit = FrequencyUnit.days),
+                              child: Text(
+                                tempFrequencyValue == 1 ? 'Day' : 'Days',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: tempFrequencyUnit == FrequencyUnit.days ? const Color(0xFF5FCBAA) : Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('|', style: TextStyle(fontSize: 14, color: Colors.grey)),
+                            const SizedBox(width: 12),
+                            GestureDetector(
+                              onTap: () => setState(() => tempFrequencyUnit = FrequencyUnit.weeks),
+                              child: Text(
+                                tempFrequencyValue == 1 ? 'Week' : 'Weeks',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: tempFrequencyUnit == FrequencyUnit.weeks ? const Color(0xFF5FCBAA) : Colors.grey,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -284,8 +308,8 @@ class TaskCard extends StatelessWidget {
                         icon: const Icon(Icons.check, color: Colors.white, size: 28),
                         onPressed: () async {
                           // Update frequency if changed
-                          if (tempFrequency != task.frequencyDays) {
-                            await dataService.updateTaskFrequency(task.id, tempFrequency);
+                          if (tempFrequencyValue != task.frequencyValue || tempFrequencyUnit != task.frequencyUnit) {
+                            await dataService.updateTaskFrequency(task.id, tempFrequencyValue, tempFrequencyUnit);
                           }
                           // Update cleanliness level
                           await dataService.updateCleanlinessLevel(task.id, tempLevel);

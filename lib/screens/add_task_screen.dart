@@ -16,14 +16,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _nameController = TextEditingController();
   final _frequencyController = TextEditingController();
   
-  String? _selectedRoomId;
-  bool _justCleaned = true;
+  FrequencyUnit _frequencyUnit = FrequencyUnit.weeks;
 
   @override
   void initState() {
     super.initState();
     _selectedRoomId = widget.preselectedRoomId;
-    _frequencyController.text = '1'; // Default to 1 week
+    _frequencyController.text = '1'; 
   }
 
   @override
@@ -177,14 +176,37 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Week',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0xFF5FCBAA),
-                      fontWeight: FontWeight.w600,
-                    ),
+                  const SizedBox(height: 16),
+                  // Unit Selection (Days/Weeks)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => setState(() => _frequencyUnit = FrequencyUnit.days),
+                        child: Text(
+                          'Day',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: _frequencyUnit == FrequencyUnit.days ? const Color(0xFF5FCBAA) : Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text('|', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                      const SizedBox(width: 16),
+                      GestureDetector(
+                        onTap: () => setState(() => _frequencyUnit = FrequencyUnit.weeks),
+                        child: Text(
+                          'Week',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: _frequencyUnit == FrequencyUnit.weeks ? const Color(0xFF5FCBAA) : Colors.grey,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -225,7 +247,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   await dataService.addTask(
                     name: _nameController.text,
                     roomId: _selectedRoomId!,
-                    frequencyDays: int.parse(_frequencyController.text),
+                    frequencyValue: int.parse(_frequencyController.text),
+                    frequencyUnit: _frequencyUnit,
                     justCleaned: _justCleaned,
                   );
                   if (context.mounted) {

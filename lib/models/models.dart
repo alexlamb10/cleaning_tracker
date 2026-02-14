@@ -35,11 +35,17 @@ class Room {
       );
 }
 
+enum FrequencyUnit {
+  days,
+  weeks,
+}
+
 class Task {
   final String id;
   final String name;
   final String roomId;
-  final int frequencyDays;
+  final int frequencyValue;
+  final FrequencyUnit frequencyUnit;
   final DateTime? lastCompletedDate;
   final DateTime createdAt;
   final double cleanlinessLevel; // 0.0 = dirty, 1.0 = perfectly clean
@@ -48,17 +54,23 @@ class Task {
     required this.id,
     required this.name,
     required this.roomId,
-    required this.frequencyDays,
+    required this.frequencyValue,
+    this.frequencyUnit = FrequencyUnit.weeks,
     this.lastCompletedDate,
     required this.createdAt,
     this.cleanlinessLevel = 1.0,
   });
 
+  int get frequencyDays => frequencyUnit == FrequencyUnit.weeks 
+      ? frequencyValue * 7 
+      : frequencyValue;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'roomId': roomId,
-        'frequencyDays': frequencyDays,
+        'frequencyValue': frequencyValue,
+        'frequencyUnit': frequencyUnit.name,
         'lastCompletedDate': lastCompletedDate?.toIso8601String(),
         'createdAt': createdAt.toIso8601String(),
         'cleanlinessLevel': cleanlinessLevel,
@@ -68,7 +80,10 @@ class Task {
         id: json['id'],
         name: json['name'],
         roomId: json['roomId'],
-        frequencyDays: json['frequencyDays'],
+        frequencyValue: json['frequencyValue'] ?? json['frequencyDays'] ?? 1,
+        frequencyUnit: json['frequencyUnit'] != null 
+            ? FrequencyUnit.values.byName(json['frequencyUnit'])
+            : (json['frequencyDays'] != null ? FrequencyUnit.days : FrequencyUnit.weeks),
         lastCompletedDate: json['lastCompletedDate'] != null
             ? DateTime.parse(json['lastCompletedDate'])
             : null,
