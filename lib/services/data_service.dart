@@ -1,4 +1,5 @@
 import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -202,11 +203,21 @@ class DataService extends ChangeNotifier {
   }
 
   Future<void> requestNotificationPermission() async {
-    final status = await js.context.callMethod('requestNotificationPermission');
+    final promise = js.context.callMethod('requestNotificationPermission');
+    final status = await js_util.promiseToFuture(promise);
     print('Notification permission status: $status');
     
     if (status == 'granted') {
       await setupBackgroundPush();
+    }
+    notifyListeners();
+  }
+
+  String getNotificationPermission() {
+    try {
+      return js.context.callMethod('getNotificationPermission');
+    } catch (e) {
+      return 'unsupported';
     }
   }
 
@@ -220,7 +231,8 @@ class DataService extends ChangeNotifier {
     }
     
     try {
-      final subscription = await js.context.callMethod('subscribeToPush', [vapidPublicKey]);
+      final promise = js.context.callMethod('subscribeToPush', [vapidPublicKey]);
+      final subscription = await js_util.promiseToFuture(promise);
       if (subscription != null) {
         await _syncService.saveSubscription(subscription);
       }

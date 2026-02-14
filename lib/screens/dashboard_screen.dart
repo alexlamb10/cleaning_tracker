@@ -22,8 +22,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     // Request notification permission on first launch
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<DataService>().requestNotificationPermission();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Delay slightly to ensure PWA environment is stable on mobile launch
+      await Future.delayed(const Duration(milliseconds: 1500));
+      if (mounted) {
+        context.read<DataService>().requestNotificationPermission();
+      }
     });
   }
 
@@ -141,60 +145,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: dataService.rooms.length,
-          itemBuilder: (context, index) {
-            final room = dataService.rooms[index];
-            final taskCount = dataService.getTasksForRoom(room.id).length;
-            
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RoomDetailScreen(roomId: room.id),
-                  ),
-                );
-              },
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.06),
-                      blurRadius: 15,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      room.name,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+        return Column(
+          children: [
+            _buildNotificationBanner(context, dataService),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: dataService.rooms.length,
+                itemBuilder: (context, index) {
+                  final room = dataService.rooms[index];
+                  final taskCount = dataService.getTasksForRoom(room.id).length;
+                  
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => RoomDetailScreen(roomId: room.id),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.06),
+                            blurRadius: 15,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            room.name,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Text(
+                            '$taskCount ${taskCount == 1 ? 'task' : 'tasks'}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      '$taskCount ${taskCount == 1 ? 'task' : 'tasks'}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                        fontWeight: FontWeight.w400,
-                      ),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-            );
-          },
+            ),
+          ],
         );
       },
     );
@@ -258,6 +269,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildNotificationBanner(BuildContext context, DataService dataService) {
+    final status = dataService.getNotificationPermission();
+    if (status != 'default') return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFA9BDC4).withOpacity(0.2), // Ether with opacity
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFA9BDC4).withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.notifications_active_outlined, color: Color(0xFF4B5244)), // Thicket
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Text(
+              'Enable reminders to stay on top of your cleaning!',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF121212), // Ink
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          TextButton(
+            onPressed: () => dataService.requestNotificationPermission(),
+            style: TextButton.styleFrom(
+              backgroundColor: const Color(0xFF4B5244), // Thicket
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Enable', style: TextStyle(fontSize: 13)),
+          ),
+        ],
+      ),
     );
   }
 }

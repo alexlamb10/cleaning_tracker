@@ -19,12 +19,12 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Clean and simple cleaning schedule tracker.">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="cleaning_tracker">
+  <meta name="apple-mobile-web-app-title" content="CleanTrack">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
@@ -61,6 +61,11 @@
       return permission;
     };
 
+    window.getNotificationPermission = function () {
+      if (!('Notification' in window)) return 'unsupported';
+      return Notification.permission;
+    };
+
     window.showTestNotification = async function (title, body) {
       console.log('Attempting notification:', title, body);
 
@@ -79,7 +84,7 @@
             const registration = await navigator.serviceWorker.ready;
             await registration.showNotification(title, {
               body: body,
-              icon: '/icons/logo.svg',
+              icon: 'icons/Icon-192.png',
               vibrate: [200, 100, 200],
               tag: 'clean-track-simulation'
             });
