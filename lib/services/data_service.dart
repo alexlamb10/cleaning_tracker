@@ -208,7 +208,9 @@ class DataService extends ChangeNotifier {
     if (index != -1) {
       final task = _tasks[index];
       if (task.lastCompletedDate != null) {
-        _tasks[index] = Task(
+        final oldStatus = getTaskStatus(task);
+        
+        final updatedTask = Task(
           id: task.id,
           name: task.name,
           roomId: task.roomId,
@@ -218,6 +220,18 @@ class DataService extends ChangeNotifier {
           createdAt: task.createdAt,
           cleanlinessLevel: task.cleanlinessLevel,
         );
+        
+        _tasks[index] = updatedTask;
+        final newStatus = getTaskStatus(updatedTask);
+        
+        // Trigger a local notification if it just became overdue
+        if (newStatus == TaskStatus.overdue && oldStatus != TaskStatus.overdue) {
+          js.context.callMethod('showTestNotification', [
+            'Task Overdue!',
+            '${task.name} needs cleaning!'
+          ]);
+        }
+        
         await _saveTasks();
         notifyListeners();
       }
