@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#5FCBAA"/>
+  <!-- Broom Handle -->
+  <path d="M340 120 L240 220" stroke="white" stroke-width="30" stroke-linecap="round"/>
+  <!-- Broom Bristles -->
+  <path d="M240 220 L180 280 Q140 320 180 360 L220 400 L260 360 L200 300 M240 220 L300 160" fill="white" stroke="white" stroke-width="10" stroke-linejoin="round"/>
+  <!-- Refined Broom Shape -->
+  <g transform="translate(256, 256) rotate(-45) translate(-256, -256)">
+    <!-- Handle -->
+    <rect x="246" y="60" width="20" height="250" rx="10" fill="white"/>
+    <!-- Bristles Base -->
+    <path d="M216 310 h80 l20 120 H196 z" fill="white"/>
+    <!-- Detail lines on bristles -->
+    <line x1="236" y1="310" x2="226" y2="430" stroke="#5FCBAA" stroke-width="4"/>
+    <line x1="256" y1="310" x2="256" y2="430" stroke="#5FCBAA" stroke-width="4"/>
+    <line x1="276" y1="310" x2="286" y2="430" stroke="#5FCBAA" stroke-width="4"/>
+  </g>
+</svg>
