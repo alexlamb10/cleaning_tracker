@@ -92,15 +92,17 @@ class DataService extends ChangeNotifier {
     required String roomId,
     required int frequencyValue,
     required FrequencyUnit frequencyUnit,
-    required bool justCleaned,
+    required double initialCleanliness,
   }) async {
     final frequencyDays = frequencyUnit == FrequencyUnit.weeks 
         ? frequencyValue * 7 
         : frequencyValue;
 
-    final lastCompleted = justCleaned
-        ? DateTime.now()
-        : DateTime.now().subtract(Duration(days: frequencyDays));
+    // Calculate lastCompletedDate based on initial cleanliness level
+    final totalMinutes = frequencyDays * 24 * 60;
+    final minutesSinceClean = ((1.0 - initialCleanliness) * totalMinutes).round();
+    
+    final lastCompleted = DateTime.now().subtract(Duration(minutes: minutesSinceClean));
 
     final task = Task(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -110,6 +112,7 @@ class DataService extends ChangeNotifier {
       frequencyUnit: frequencyUnit,
       lastCompletedDate: lastCompleted,
       createdAt: DateTime.now(),
+      cleanlinessLevel: initialCleanliness,
     );
 
     _tasks.add(task);

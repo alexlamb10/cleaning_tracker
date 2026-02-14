@@ -19,7 +19,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   
   FrequencyUnit _frequencyUnit = FrequencyUnit.weeks;
   String? _selectedRoomId;
-  bool _justCleaned = true;
+  int _initialCleanliness = 100; // 0 to 100 percent
 
   @override
   void initState() {
@@ -219,28 +219,52 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               'Current Status:',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            RadioListTile<bool>(
-              title: const Text('Just cleaned it'),
-              subtitle: const Text('Task is up to date'),
-              value: true,
-              groupValue: _justCleaned,
-              onChanged: (value) {
-                setState(() {
-                  _justCleaned = value!;
-                });
-              },
+            const SizedBox(height: 16),
+            Center(
+              child: Container(
+                height: 120,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey[300]!),
+                ),
+                child: ListWheelScrollView.useDelegate(
+                  itemExtent: 40,
+                  physics: const FixedExtentScrollPhysics(),
+                  controller: FixedExtentScrollController(initialItem: 100),
+                  onSelectedItemChanged: (index) {
+                    setState(() {
+                      // Index 0 = 0%, Index 100 = 100%
+                      // Clamped to 0-100 just in case
+                      _initialCleanliness = index.clamp(0, 100);
+                    });
+                  },
+                  childDelegate: ListWheelChildBuilderDelegate(
+                    builder: (context, index) {
+                      if (index < 0 || index > 100) return null;
+                      final isSelected = _initialCleanliness == index;
+                      return Center(
+                        child: Text(
+                          '$index% ${index == 100 ? "(Freshly Cleaned)" : index == 0 ? "(Needs Cleaning)" : ""}',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected ? const Color(0xFF5FCBAA) : Colors.grey,
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: 101,
+                  ),
+                ),
+              ),
             ),
-            RadioListTile<bool>(
-              title: const Text('Needs cleaning now'),
-              subtitle: const Text('Task is overdue'),
-              value: false,
-              groupValue: _justCleaned,
-              onChanged: (value) {
-                setState(() {
-                  _justCleaned = value!;
-                });
-              },
+            const SizedBox(height: 8),
+            Text(
+              'Set the current cleanliness level from 0% to 100%',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[600], fontSize: 12),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
@@ -252,7 +276,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     roomId: _selectedRoomId!,
                     frequencyValue: int.parse(_frequencyController.text),
                     frequencyUnit: _frequencyUnit,
-                    justCleaned: _justCleaned,
+                    initialCleanliness: _initialCleanliness / 100.0,
                   );
                   if (context.mounted) {
                     Navigator.pop(context);

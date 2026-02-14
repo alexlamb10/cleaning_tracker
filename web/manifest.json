@@ -1,6 +1,6 @@
 {
-    "name": "cleaning_tracker",
-    "short_name": "cleaning_tracker",
+    "name": "CleanTrack",
+    "short_name": "CleanTrack",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
