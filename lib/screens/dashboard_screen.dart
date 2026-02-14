@@ -269,18 +269,12 @@ class _TaskListItem extends StatelessWidget {
         children: [
           Padding(
             padding: const EdgeInsets.only(left: 4, bottom: 4),
-            child: Row(
-              children: [
-                Text(room.icon, style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 4),
-                Text(
-                  room.name,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+            child: Text(
+              room.name,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
             ),
           ),
           TaskCard(task: task),

@@ -1,6 +1,5 @@
-import 'package:uuid/uuid.dart';
-
-const _uuid = Uuid();
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 enum TaskStatus {
   overdue,

@@ -3,13 +3,6 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cleaning_tracker/models/models.dart';
 
-enum TaskStatus {
-  overdue,
-  dueSoon,
-  upcoming,
-  completed,
-}
-
 class DataService extends ChangeNotifier {
   static const _roomsKey = 'rooms';
   static const _tasksKey = 'tasks';
@@ -57,12 +50,10 @@ class DataService extends ChangeNotifier {
   }
 
   // Room operations
-  Future<void> addRoom(String name, {String icon = '🏠', String color = '#2196F3'}) async {
+  Future<void> addRoom(String name) async {
     final room = Room(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: name,
-      icon: icon,
-      color: color,
       createdAt: DateTime.now(),
     );
     _rooms.add(room);
