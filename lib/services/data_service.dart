@@ -134,6 +134,30 @@ class DataService extends ChangeNotifier {
     return _tasks.where((t) => t.roomId == roomId).toList();
   }
 
+  Future<void> updateTaskFrequency(String taskId, int newFrequency) async {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index != -1) {
+      final task = _tasks[index];
+      _tasks[index] = Task(
+        id: task.id,
+        name: task.name,
+        roomId: task.roomId,
+        frequencyDays: newFrequency,
+        lastCompletedDate: task.lastCompletedDate,
+        createdAt: task.createdAt,
+        cleanlinessLevel: task.cleanlinessLevel,
+      );
+      await _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteTask(String taskId) async {
+    _tasks.removeWhere((t) => t.id == taskId);
+    await _saveTasks();
+    notifyListeners();
+  }
+
   // Calculate cleanliness decay over time
   double getCalculatedCleanlinessLevel(Task task) {
     if (task.lastCompletedDate == null) {
@@ -145,6 +169,15 @@ class DataService extends ChangeNotifier {
     final calculatedLevel = (task.cleanlinessLevel - (daysSinceClean * decayRate)).clamp(0.0, 1.0);
     
     return calculatedLevel;
+  }
+
+  int? getDaysUntilNextCleaning(Task task) {
+    if (task.lastCompletedDate == null) return null;
+    
+    final daysSinceClean = DateTime.now().difference(task.lastCompletedDate!).inDays;
+    final daysRemaining = task.frequencyDays - daysSinceClean;
+    
+    return daysRemaining > 0 ? daysRemaining : 0;
   }
 
   // Task status calculation based on cleanliness level
