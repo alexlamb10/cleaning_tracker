@@ -58,8 +58,7 @@
           console.error('Notification creation failed:', e);
         }
       }
-      // Fallback for debugging or if system notifications are blocked
-      alert(title + '\n' + body);
+      // Fallback removed per user preference - only push notifications allowed
       return false;
     };
   </script>
