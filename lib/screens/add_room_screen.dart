@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cleaning_tracker/services/task_service.dart';
+import 'package:cleaning_tracker/services/data_service.dart';
 
 class AddRoomScreen extends StatefulWidget {
   const AddRoomScreen({super.key});
@@ -83,8 +83,8 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  final taskService = context.read<TaskService>();
-                  await taskService.addRoom(
+                  final dataService = context.read<DataService>();
+                  await dataService.addRoom(
                     _nameController.text,
                     icon: _selectedIcon,
                   );

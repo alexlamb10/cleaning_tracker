@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cleaning_tracker/database/database.dart';
-import 'package:cleaning_tracker/services/task_service.dart';
+import 'package:cleaning_tracker/models/models.dart';
+import 'package:cleaning_tracker/services/data_service.dart';
 import 'package:intl/intl.dart';
 
 class TaskCard extends StatelessWidget {
@@ -11,9 +11,9 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskService = context.read<TaskService>();
-    final status = taskService.getTaskStatus(task);
-    final nextDue = taskService.getNextDueDate(task);
+    final dataService = context.read<DataService>();
+    final status = dataService.getTaskStatus(task);
+    final nextDue = dataService.getNextDueDate(task);
 
     Color statusColor;
     IconData statusIcon;
@@ -55,7 +55,7 @@ class TaskCard extends StatelessWidget {
         value: false,
         onChanged: (value) async {
           if (value == true) {
-            await taskService.completeTask(task.id);
+            await dataService.completeTask(task.id);
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(

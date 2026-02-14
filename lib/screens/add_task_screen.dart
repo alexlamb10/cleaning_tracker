@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cleaning_tracker/database/database.dart';
-import 'package:cleaning_tracker/services/task_service.dart';
+import 'package:cleaning_tracker/services/data_service.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({super.key});
@@ -15,7 +14,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _nameController = TextEditingController();
   final _frequencyController = TextEditingController();
   
-  int? _selectedRoomId;
+  String? _selectedRoomId;
   bool _justCleaned = true;
 
   @override
@@ -27,8 +26,6 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskService = context.read<TaskService>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Add Task'),
@@ -38,10 +35,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            StreamBuilder<List<Room>>(
-              stream: taskService.watchAllRooms(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            Consumer<DataService>(
+              builder: (context, dataService, child) {
+                if (dataService.rooms.isEmpty) {
                   return const Card(
                     child: Padding(
                       padding: EdgeInsets.all(16),
@@ -50,9 +46,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   );
                 }
 
-                final rooms = snapshot.data!;
+                final rooms = dataService.rooms;
 
-                return DropdownButtonFormField<int>(
+                return DropdownButtonFormField<String>(
                   value: _selectedRoomId,
                   decoration: const InputDecoration(
                     labelText: 'Room',
@@ -150,7 +146,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ElevatedButton(
               onPressed: () async {
                 if (_formKey.currentState!.validate()) {
-                  await taskService.addTask(
+                  final dataService = context.read<DataService>();
+                  await dataService.addTask(
                     name: _nameController.text,
                     roomId: _selectedRoomId!,
                     frequencyDays: int.parse(_frequencyController.text),

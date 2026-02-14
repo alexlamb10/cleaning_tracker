@@ -1,19 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cleaning_tracker/database/database.dart';
-import 'package:cleaning_tracker/services/task_service.dart';
+import 'package:cleaning_tracker/services/data_service.dart';
 import 'package:cleaning_tracker/screens/dashboard_screen.dart';
 
 void main() {
-  final database = AppDatabase();
-  final taskService = TaskService(database);
-
   runApp(
-    MultiProvider(
-      providers: [
-        Provider<AppDatabase>.value(value: database),
-        Provider<TaskService>.value(value: taskService),
-      ],
+    ChangeNotifierProvider(
+      create: (_) => DataService(),
       child: const CleanTrackApp(),
     ),
   );

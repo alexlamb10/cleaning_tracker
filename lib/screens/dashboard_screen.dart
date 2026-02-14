@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:cleaning_tracker/database/database.dart';
-import 'package:cleaning_tracker/services/task_service.dart';
+import 'package:cleaning_tracker/models/models.dart';
+import 'package:cleaning_tracker/services/data_service.dart';
 import 'package:cleaning_tracker/screens/add_room_screen.dart';
 import 'package:cleaning_tracker/screens/add_task_screen.dart';
 import 'package:cleaning_tracker/widgets/task_card.dart';
@@ -11,8 +11,6 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskService = context.read<TaskService>();
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('CleanTrack'),
@@ -29,14 +27,9 @@ class DashboardScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: StreamBuilder<List<Room>>(
-        stream: taskService.watchAllRooms(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+      body: Consumer<DataService>(
+        builder: (context, dataService, child) {
+          if (dataService.rooms.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -60,12 +53,10 @@ class DashboardScreen extends StatelessWidget {
             );
           }
 
-          final rooms = snapshot.data!;
-
           return ListView.builder(
-            itemCount: rooms.length,
+            itemCount: dataService.rooms.length,
             itemBuilder: (context, index) {
-              final room = rooms[index];
+              final room = dataService.rooms[index];
               return _RoomSection(room: room);
             },
           );
@@ -92,16 +83,9 @@ class _RoomSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final taskService = context.read<TaskService>();
-
-    return StreamBuilder<List<Task>>(
-      stream: taskService.getTasksForRoom(room.id),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const SizedBox.shrink();
-        }
-
-        final tasks = snapshot.data!;
+    return Consumer<DataService>(
+      builder: (context, dataService, child) {
+        final tasks = dataService.getTasksForRoom(room.id);
         if (tasks.isEmpty) return const SizedBox.shrink();
 
         return Card(
