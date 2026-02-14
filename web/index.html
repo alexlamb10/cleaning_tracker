@@ -65,10 +65,8 @@
       console.log('Attempting notification:', title, body);
       if (Notification.permission === 'granted') {
         try {
-          // Using service worker to show notification (more reliable for PWA)
-          navigator.serviceWorker.ready.then(function (registration) {
-            registration.showNotification(title, { body: body, icon: '/icons/Icon-192.png' });
-          });
+          // Direct notification - simpler and more reliable for testing
+          new Notification(title, { body: body, icon: '/icons/logo.svg' });
           return true;
         } catch (e) {
           console.error('Notification creation failed:', e);
