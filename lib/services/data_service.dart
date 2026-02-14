@@ -61,6 +61,21 @@ class DataService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> updateRoom(String roomId, String newName) async {
+    final index = _rooms.indexWhere((r) => r.id == roomId);
+    if (index != -1) {
+      final room = _rooms[index];
+      _rooms[index] = Room(
+        id: room.id,
+        name: newName,
+        color: room.color,
+        createdAt: room.createdAt,
+      );
+      await _saveRooms();
+      notifyListeners();
+    }
+  }
+
   Future<void> deleteRoom(String roomId) async {
     _rooms.removeWhere((r) => r.id == roomId);
     _tasks.removeWhere((t) => t.roomId == roomId);
