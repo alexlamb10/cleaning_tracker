@@ -66,13 +66,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   items: rooms.map((room) {
                     return DropdownMenuItem(
                       value: room.id,
-                      child: Row(
-                        children: [
-                          Text(room.icon, style: const TextStyle(fontSize: 20)),
-                          const SizedBox(width: 8),
-                          Text(room.name),
-                        ],
-                      ),
+                      child: Text(room.name),
                     );
                   }).toList(),
                   onChanged: (value) {
