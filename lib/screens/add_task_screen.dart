@@ -3,7 +3,9 @@ import 'package:provider/provider.dart';
 import 'package:cleaning_tracker/services/data_service.dart';
 
 class AddTaskScreen extends StatefulWidget {
-  const AddTaskScreen({super.key});
+  final String? preselectedRoomId;
+
+  const AddTaskScreen({super.key, this.preselectedRoomId});
 
   @override
   State<AddTaskScreen> createState() => _AddTaskScreenState();
@@ -16,6 +18,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   
   String? _selectedRoomId;
   bool _justCleaned = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRoomId = widget.preselectedRoomId;
+  }
 
   @override
   void dispose() {

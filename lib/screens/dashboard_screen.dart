@@ -4,113 +4,286 @@ import 'package:cleaning_tracker/models/models.dart';
 import 'package:cleaning_tracker/services/data_service.dart';
 import 'package:cleaning_tracker/screens/add_room_screen.dart';
 import 'package:cleaning_tracker/screens/add_task_screen.dart';
+import 'package:cleaning_tracker/screens/room_detail_screen.dart';
+import 'package:cleaning_tracker/widgets/gradient_background.dart';
 import 'package:cleaning_tracker/widgets/task_card.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  int _selectedIndex = 0;
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('CleanTrack'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_home),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddRoomScreen()),
-              );
-            },
-            tooltip: 'Add Room',
-          ),
-        ],
-      ),
-      body: Consumer<DataService>(
-        builder: (context, dataService, child) {
-          if (dataService.rooms.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.home_outlined, size: 80, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text('No rooms yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
+    return GradientBackground(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(_getTitle()),
+          actions: _selectedIndex == 0
+              ? [
+                  IconButton(
+                    icon: const Icon(Icons.add_home),
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(builder: (context) => const AddRoomScreen()),
                       );
                     },
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add Your First Room'),
+                    tooltip: 'Add Room',
                   ),
-                ],
+                ]
+              : null,
+        ),
+        body: _buildBody(),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          selectedItemColor: const Color(0xFF5FCBAA),
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home),
+              label: 'Rooms',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.check_circle_outline),
+              activeIcon: Icon(Icons.check_circle),
+              label: 'To do',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.notifications_outlined),
+              activeIcon: Icon(Icons.notifications),
+              label: 'Reminders',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _getTitle() {
+    switch (_selectedIndex) {
+      case 0:
+        return 'Rooms';
+      case 1:
+        return 'To Do';
+      case 2:
+        return 'Reminders';
+      default:
+        return 'CleanTrack';
+    }
+  }
+
+  Widget _buildBody() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildRoomsView();
+      case 1:
+        return _buildToDoView();
+      case 2:
+        return _buildRemindersView();
+      default:
+        return _buildRoomsView();
+    }
+  }
+
+  Widget _buildRoomsView() {
+    return Consumer<DataService>(
+      builder: (context, dataService, child) {
+        if (dataService.rooms.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.home_outlined, size: 80, color: Colors.grey),
+                const SizedBox(height: 16),
+                const Text('No rooms yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddRoomScreen()),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add Your First Room'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5FCBAA),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            childAspectRatio: 1.2,
+            crossAxisSpacing: 16,
+            mainAxisSpacing: 16,
+          ),
+          itemCount: dataService.rooms.length,
+          itemBuilder: (context, index) {
+            final room = dataService.rooms[index];
+            final taskCount = dataService.getTasksForRoom(room.id).length;
+            
+            return GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RoomDetailScreen(room: room),
+                  ),
+                );
+              },
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(room.icon, style: const TextStyle(fontSize: 48)),
+                      const SizedBox(height: 12),
+                      Text(
+                        room.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$taskCount ${taskCount == 1 ? 'task' : 'tasks'}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             );
-          }
+          },
+        );
+      },
+    );
+  }
 
-          return ListView.builder(
-            itemCount: dataService.rooms.length,
-            itemBuilder: (context, index) {
-              final room = dataService.rooms[index];
-              return _RoomSection(room: room);
-            },
+  Widget _buildToDoView() {
+    return Consumer<DataService>(
+      builder: (context, dataService, child) {
+        final allTasks = dataService.tasks;
+        
+        if (allTasks.isEmpty) {
+          return const Center(
+            child: Text('No tasks yet', style: TextStyle(fontSize: 18, color: Colors.grey)),
           );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AddTaskScreen()),
+        }
+
+        // Sort by cleanliness level (dirtiest first)
+        final sortedTasks = List<Task>.from(allTasks)
+          ..sort((a, b) {
+            final levelA = dataService.getCalculatedCleanlinessLevel(a);
+            final levelB = dataService.getCalculatedCleanlinessLevel(b);
+            return levelA.compareTo(levelB);
+          });
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: sortedTasks.length,
+          itemBuilder: (context, index) {
+            return _TaskListItem(task: sortedTasks[index]);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildRemindersView() {
+    return Consumer<DataService>(
+      builder: (context, dataService, child) {
+        final overdueTasks = dataService.tasks.where((task) {
+          return dataService.getTaskStatus(task) == TaskStatus.overdue;
+        }).toList();
+
+        if (overdueTasks.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.check_circle_outline, size: 80, color: Color(0xFF5FCBAA)),
+                SizedBox(height: 16),
+                Text('All caught up!', style: TextStyle(fontSize: 18, color: Colors.grey)),
+              ],
+            ),
           );
-        },
-        child: const Icon(Icons.add),
-        tooltip: 'Add Task',
-      ),
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          itemCount: overdueTasks.length,
+          itemBuilder: (context, index) {
+            return _TaskListItem(task: overdueTasks[index]);
+          },
+        );
+      },
     );
   }
 }
 
-class _RoomSection extends StatelessWidget {
-  final Room room;
+class _TaskListItem extends StatelessWidget {
+  final Task task;
 
-  const _RoomSection({required this.room});
+  const _TaskListItem({required this.task});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<DataService>(
-      builder: (context, dataService, child) {
-        final tasks = dataService.getTasksForRoom(room.id);
-        if (tasks.isEmpty) return const SizedBox.shrink();
-
-        return Card(
-          margin: const EdgeInsets.all(8),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Text(room.icon, style: const TextStyle(fontSize: 24)),
-                    const SizedBox(width: 8),
-                    Text(
-                      room.name,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                  ],
+    final dataService = context.read<DataService>();
+    final room = dataService.rooms.firstWhere((r) => r.id == task.roomId);
+    
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 4),
+            child: Row(
+              children: [
+                Text(room.icon, style: const TextStyle(fontSize: 16)),
+                const SizedBox(width: 4),
+                Text(
+                  room.name,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
                 ),
-              ),
-              ...tasks.map((task) => TaskCard(task: task)),
-            ],
+              ],
+            ),
           ),
-        );
-      },
+          TaskCard(task: task),
+        ],
+      ),
     );
   }
 }

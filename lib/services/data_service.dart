@@ -114,6 +114,25 @@ class DataService extends ChangeNotifier {
         frequencyDays: task.frequencyDays,
         lastCompletedDate: DateTime.now(),
         createdAt: task.createdAt,
+        cleanlinessLevel: 1.0, // Fully clean
+      );
+      await _saveTasks();
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateCleanlinessLevel(String taskId, double level) async {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index != -1) {
+      final task = _tasks[index];
+      _tasks[index] = Task(
+        id: task.id,
+        name: task.name,
+        roomId: task.roomId,
+        frequencyDays: task.frequencyDays,
+        lastCompletedDate: task.lastCompletedDate,
+        createdAt: task.createdAt,
+        cleanlinessLevel: level.clamp(0.0, 1.0),
       );
       await _saveTasks();
       notifyListeners();
@@ -124,19 +143,26 @@ class DataService extends ChangeNotifier {
     return _tasks.where((t) => t.roomId == roomId).toList();
   }
 
-  // Task status calculation
-  TaskStatus getTaskStatus(Task task) {
+  // Calculate cleanliness decay over time
+  double getCalculatedCleanlinessLevel(Task task) {
     if (task.lastCompletedDate == null) {
-      return TaskStatus.overdue;
+      return 0.0; // Never cleaned
     }
 
-    final nextDue = task.lastCompletedDate!.add(Duration(days: task.frequencyDays));
-    final now = DateTime.now();
-    final daysUntilDue = nextDue.difference(now).inDays;
+    final daysSinceClean = DateTime.now().difference(task.lastCompletedDate!).inDays;
+    final decayRate = 1.0 / task.frequencyDays; // Decay to 0 over frequency period
+    final calculatedLevel = (task.cleanlinessLevel - (daysSinceClean * decayRate)).clamp(0.0, 1.0);
+    
+    return calculatedLevel;
+  }
 
-    if (daysUntilDue < 0) {
+  // Task status calculation based on cleanliness level
+  TaskStatus getTaskStatus(Task task) {
+    final level = getCalculatedCleanlinessLevel(task);
+    
+    if (level <= 0.2) {
       return TaskStatus.overdue;
-    } else if (daysUntilDue <= 2) {
+    } else if (level <= 0.5) {
       return TaskStatus.dueSoon;
     } else {
       return TaskStatus.upcoming;

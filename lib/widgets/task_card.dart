@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cleaning_tracker/models/models.dart';
 import 'package:cleaning_tracker/services/data_service.dart';
+import 'package:cleaning_tracker/widgets/circular_progress_wheel.dart';
 import 'package:intl/intl.dart';
 
 class TaskCard extends StatelessWidget {
@@ -9,64 +10,154 @@ class TaskCard extends StatelessWidget {
 
   const TaskCard({super.key, required this.task});
 
+  void _showCleanlinessDialog(BuildContext context) {
+    final dataService = context.read<DataService>();
+    double tempLevel = dataService.getCalculatedCleanlinessLevel(task);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          padding: const EdgeInsets.all(24),
+          constraints: const BoxConstraints(maxWidth: 300),
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              String getLevelText() {
+                if (tempLevel >= 0.9) return "Spotless!";
+                if (tempLevel >= 0.7) return "Pretty clean";
+                if (tempLevel >= 0.5) return "It's ok";
+                if (tempLevel >= 0.3) return "Getting dirty";
+                return "Needs cleaning";
+              }
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(width: 40),
+                      const Text(
+                        'How clean is it now?',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.red),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  CircularProgressWheel(
+                    progress: tempLevel,
+                    size: 180,
+                    onProgressChanged: (value) {
+                      setState(() {
+                        tempLevel = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    getLevelText(),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: FloatingActionButton(
+                      onPressed: () {
+                        dataService.updateCleanlinessLevel(task.id, tempLevel);
+                        Navigator.pop(context);
+                      },
+                      backgroundColor: const Color(0xFF5FCBAA),
+                      child: const Icon(Icons.check, color: Colors.white),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dataService = context.read<DataService>();
-    final status = dataService.getTaskStatus(task);
-    final nextDue = dataService.getNextDueDate(task);
+    return Consumer<DataService>(
+      builder: (context, dataService, child) {
+        final level = dataService.getCalculatedCleanlinessLevel(task);
+        final nextDue = dataService.getNextDueDate(task);
+        
+        String getDueText() {
+          if (nextDue == null) return 'Never cleaned';
+          final daysUntil = nextDue.difference(DateTime.now()).inDays;
+          if (daysUntil < 0) return 'Overdue';
+          if (daysUntil == 0) return 'Due today';
+          if (daysUntil == 1) return 'Due tomorrow';
+          return 'Due in $daysUntil days';
+        }
 
-    Color statusColor;
-    IconData statusIcon;
-    String statusText;
-
-    switch (status) {
-      case TaskStatus.overdue:
-        statusColor = Colors.red;
-        statusIcon = Icons.warning;
-        statusText = 'Overdue';
-        break;
-      case TaskStatus.dueSoon:
-        statusColor = Colors.orange;
-        statusIcon = Icons.schedule;
-        statusText = 'Due Soon';
-        break;
-      case TaskStatus.upcoming:
-        statusColor = Colors.green;
-        statusIcon = Icons.check_circle_outline;
-        statusText = 'Upcoming';
-        break;
-      case TaskStatus.completed:
-        statusColor = Colors.grey;
-        statusIcon = Icons.check_circle;
-        statusText = 'Completed';
-        break;
-    }
-
-    return ListTile(
-      leading: Icon(statusIcon, color: statusColor),
-      title: Text(task.name),
-      subtitle: nextDue != null
-          ? Text(
-              'Next due: ${DateFormat.yMMMd().format(nextDue)} ($statusText)',
-              style: TextStyle(color: statusColor),
-            )
-          : const Text('Never completed'),
-      trailing: Checkbox.adaptive(
-        value: false,
-        onChanged: (value) async {
-          if (value == true) {
-            await dataService.completeTask(task.id);
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('${task.name} completed!'),
-                  duration: const Duration(seconds: 2),
+        return GestureDetector(
+          onTap: () => _showCleanlinessDialog(context),
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 2),
                 ),
-              );
-            }
-          }
-        },
-      ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        task.name,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        getDueText(),
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                CircularProgressWheel(
+                  progress: level,
+                  size: 50,
+                  interactive: false,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

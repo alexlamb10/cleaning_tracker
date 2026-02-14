@@ -20,8 +20,31 @@ class CleanTrackApp extends StatelessWidget {
     return MaterialApp(
       title: 'CleanTrack',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF5FCBAA),
+          primary: const Color(0xFF5FCBAA),
+          secondary: const Color(0xFF5FCBAA),
+        ),
+        scaffoldBackgroundColor: Colors.transparent,
+        cardTheme: const CardThemeData(
+          color: Colors.white,
+          elevation: 4,
+          shadowColor: Color(0x1A000000),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20)),
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          iconTheme: IconThemeData(color: Colors.black87),
+          titleTextStyle: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
       home: const DashboardScreen(),
     );
