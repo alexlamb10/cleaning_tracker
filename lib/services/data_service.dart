@@ -214,6 +214,11 @@ class DataService extends ChangeNotifier {
     // This is the VAPID Public Key - replace with your actual key
     const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY_HERE';
     
+    if (vapidPublicKey == 'YOUR_VAPID_PUBLIC_KEY_HERE') {
+      print('WARNING: VAPID Public Key is not set. Background push notifications will not work.');
+      // We continue for now as local notifications might still work via simulation
+    }
+    
     try {
       final subscription = await js.context.callMethod('subscribeToPush', [vapidPublicKey]);
       if (subscription != null) {

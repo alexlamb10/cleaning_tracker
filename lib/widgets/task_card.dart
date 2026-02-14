@@ -159,7 +159,7 @@ class TaskCard extends StatelessWidget {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: Text(
-                          'Simulate 1 Day',
+                          'Simulate 3 Days',
                           style: TextStyle(fontSize: 12, color: Colors.blue[300]),
                         ),
                       ),

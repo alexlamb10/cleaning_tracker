@@ -61,7 +61,7 @@
       return permission;
     };
 
-    window.showTestNotification = function (title, body) {
+    window.showTestNotification = async function (title, body) {
       console.log('Attempting notification:', title, body);
 
       if (!("Notification" in window)) {
@@ -69,19 +69,32 @@
         return false;
       }
 
-      if (Notification.permission === 'granted') {
+      const permission = Notification.permission === 'granted' ?
+        'granted' : await Notification.requestPermission();
+
+      if (permission === 'granted') {
+        // Try Service Worker first for better mobile support
+        if ('serviceWorker' in navigator) {
+          try {
+            const registration = await navigator.serviceWorker.ready;
+            await registration.showNotification(title, {
+              body: body,
+              icon: '/icons/logo.svg',
+              vibrate: [200, 100, 200],
+              tag: 'clean-track-simulation'
+            });
+            return true;
+          } catch (e) {
+            console.error('SW notification failed, falling back:', e);
+          }
+        }
+        // Fallback to standard Notification API
         try {
           new Notification(title, { body: body, icon: '/icons/logo.svg' });
           return true;
         } catch (e) {
           console.error('Notification creation failed:', e);
         }
-      } else {
-        Notification.requestPermission().then(function (permission) {
-          if (permission === "granted") {
-            new Notification(title, { body: body, icon: '/icons/logo.svg' });
-          }
-        });
       }
       return false;
     };
