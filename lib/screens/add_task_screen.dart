@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cleaning_tracker/services/data_service.dart';
+import 'package:cleaning_tracker/models/models.dart';
 
 class AddTaskScreen extends StatefulWidget {
   final String? preselectedRoomId;
@@ -17,6 +18,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _frequencyController = TextEditingController();
   
   FrequencyUnit _frequencyUnit = FrequencyUnit.weeks;
+  String? _selectedRoomId;
+  bool _justCleaned = true;
 
   @override
   void initState() {
