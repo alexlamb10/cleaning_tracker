@@ -19,6 +19,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    // Request notification permission on first launch
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DataService>().requestNotificationPermission();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GradientBackground(
       child: Scaffold(
