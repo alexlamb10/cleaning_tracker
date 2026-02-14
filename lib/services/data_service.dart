@@ -138,13 +138,14 @@ class DataService extends ChangeNotifier {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
       final task = _tasks[index];
+      
       _tasks[index] = Task(
         id: task.id,
         name: task.name,
         roomId: task.roomId,
         frequencyValue: task.frequencyValue,
         frequencyUnit: task.frequencyUnit,
-        lastCompletedDate: task.lastCompletedDate,
+        lastCompletedDate: DateTime.now(), // Manual update resets the reference time
         createdAt: task.createdAt,
         cleanlinessLevel: level.clamp(0.0, 1.0),
       );
@@ -188,9 +189,14 @@ class DataService extends ChangeNotifier {
       return 0.0; // Never cleaned
     }
 
-    final daysSinceClean = DateTime.now().difference(task.lastCompletedDate!).inDays;
-    final decayRate = 1.0 / task.frequencyDays; // Decay to 0 over frequency period
-    final calculatedLevel = (task.cleanlinessLevel - (daysSinceClean * decayRate)).clamp(0.0, 1.0);
+    // Use minutes for smoother decay
+    final minutesSinceClean = DateTime.now().difference(task.lastCompletedDate!).inMinutes;
+    final totalMinutesInFrequency = task.frequencyDays * 24 * 60;
+    
+    if (totalMinutesInFrequency <= 0) return 1.0;
+    
+    final decayAmount = minutesSinceClean / totalMinutesInFrequency;
+    final calculatedLevel = (task.cleanlinessLevel - decayAmount).clamp(0.0, 1.0);
     
     return calculatedLevel;
   }
@@ -198,7 +204,8 @@ class DataService extends ChangeNotifier {
   int? getDaysUntilNextCleaning(Task task) {
     if (task.lastCompletedDate == null) return null;
     
-    final daysSinceClean = DateTime.now().difference(task.lastCompletedDate!).inDays;
+    final difference = DateTime.now().difference(task.lastCompletedDate!);
+    final daysSinceClean = difference.inDays;
     final daysRemaining = task.frequencyDays - daysSinceClean;
     
     return daysRemaining > 0 ? daysRemaining : 0;
