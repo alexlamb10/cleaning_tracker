@@ -31,5 +31,6 @@
             "type": "image/png",
             "purpose": "maskable"
         }
-    ]
+    ],
+    "application_server_key": "YOUR_VAPID_PUBLIC_KEY_HERE"
 }

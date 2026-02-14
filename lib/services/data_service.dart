@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cleaning_tracker/models/models.dart';
+import 'package:cleaning_tracker/services/supabase_sync_service.dart';
 
 class DataService extends ChangeNotifier {
   static const _roomsKey = 'rooms';
   static const _tasksKey = 'tasks';
 
+  final SupabaseSyncService _syncService = SupabaseSyncService();
   List<Room> _rooms = [];
   List<Task> _tasks = [];
 
@@ -112,6 +113,10 @@ class DataService extends ChangeNotifier {
 
     _tasks.add(task);
     await _saveTasks();
+    
+    // Sync to Supabase
+    await _syncService.syncTask(task, getNextDueDate(task));
+    
     notifyListeners();
   }
 
@@ -180,7 +185,19 @@ class DataService extends ChangeNotifier {
   Future<void> deleteTask(String taskId) async {
     _tasks.removeWhere((t) => t.id == taskId);
     await _saveTasks();
+    
+    // Remove from Supabase
+    await _syncService.removeTask(taskId);
+    
     notifyListeners();
+  }
+
+  Future<void> requestNotificationPermission() async {
+    // This will typically involve the web_push package logic
+    // for now we'll mock it or use standard JS interop if available.
+    print('Requesting notification permissions...');
+    // In a real app, you would use:
+    // final status = await WebPush.requestPermission();
   }
 
   // Calculate cleanliness decay over time
