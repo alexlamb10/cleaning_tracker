@@ -180,7 +180,7 @@ class RoomDetailScreen extends StatelessWidget {
                       icon: const Icon(Icons.add, size: 18),
                       label: const Text('Task'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5FCBAA),
+                        backgroundColor: const Color(0xFF4B5244), // Thicket
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                         shape: RoundedRectangleBorder(

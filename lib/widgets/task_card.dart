@@ -133,38 +133,19 @@ class TaskCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  // Next cleaning countdown and Debug button
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      if (showCountdown)
-                        Text(
-                          'Next cleaning in $daysUntilNext ${daysUntilNext == 1 ? 'day' : 'days'}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
+                  // Next cleaning countdown
+                  if (showCountdown)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 24),
+                      child: Text(
+                        'Next cleaning in $daysUntilNext ${daysUntilNext == 1 ? 'day' : 'days'}',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
                         ),
-                      if (showCountdown) const SizedBox(width: 8),
-                      TextButton(
-                        onPressed: () async {
-                          await dataService.debugSubtractDays(task.id, 3);
-                          setState(() {
-                             tempLevel = dataService.getCalculatedCleanlinessLevel(task);
-                          });
-                        },
-                        style: TextButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          'Simulate 3 Days',
-                          style: TextStyle(fontSize: 12, color: Colors.blue[300]),
-                        ),
+                        textAlign: TextAlign.center,
                       ),
-                    ],
-                  ),
+                    ),
                   const SizedBox(height: 24),
                   // Frequency selector
                   Container(
@@ -254,7 +235,7 @@ class TaskCard extends StatelessWidget {
                                 tempFrequencyValue == 1 ? 'Day' : 'Days',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: tempFrequencyUnit == FrequencyUnit.days ? const Color(0xFF5FCBAA) : Colors.grey,
+                                  color: tempFrequencyUnit == FrequencyUnit.days ? const Color(0xFF4B5244) : Colors.grey, // Thicket
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -268,7 +249,7 @@ class TaskCard extends StatelessWidget {
                                 tempFrequencyValue == 1 ? 'Week' : 'Weeks',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: tempFrequencyUnit == FrequencyUnit.weeks ? const Color(0xFF5FCBAA) : Colors.grey,
+                                  color: tempFrequencyUnit == FrequencyUnit.weeks ? const Color(0xFF4B5244) : Colors.grey, // Thicket
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -317,11 +298,11 @@ class TaskCard extends StatelessWidget {
                       width: 56,
                       height: 56,
                       decoration: const BoxDecoration(
-                        color: Color(0xFF5FCBAA),
+                        color: Color(0xFF4B5244), // Thicket
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: Color(0x405FCBAA),
+                            color: Color(0x404B5244), // Thicket low opacity
                             blurRadius: 12,
                             offset: Offset(0, 4),
                           ),
@@ -364,9 +345,9 @@ class TaskCard extends StatelessWidget {
         case TaskStatus.overdue:
           return const Color(0xFFFF6B6B);
         case TaskStatus.dueSoon:
-          return const Color(0xFFFFB84D);
+          return const Color(0xFF8C7D6E); // Silt (Brown/Orange-ish)
         case TaskStatus.upcoming:
-          return const Color(0xFF5FCBAA);
+          return const Color(0xFF4B5244); // Thicket (Green-ish)
       }
     }
 

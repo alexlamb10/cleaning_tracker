@@ -119,7 +119,7 @@ class DataService extends ChangeNotifier {
     await _saveTasks();
     
     // Sync to Supabase
-    await _syncService.syncTask(task, getNextDueDate(task));
+    await _syncService.syncTask(task, _getNotificationDate(getNextDueDate(task)));
     
     notifyListeners();
   }
@@ -162,7 +162,7 @@ class DataService extends ChangeNotifier {
       
       // Sync update to Supabase
       final updatedTask = _tasks[index];
-      await _syncService.syncTask(updatedTask, getNextDueDate(updatedTask));
+      await _syncService.syncTask(updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
       
       notifyListeners();
     }
@@ -229,42 +229,9 @@ class DataService extends ChangeNotifier {
     }
   }
 
-  void showTestNotification() {
-    js.context.callMethod('showTestNotification', ['CleanTrack Test', 'This is a local notification test! 🧼']);
-  }
 
-  Future<void> debugSubtractDays(String taskId, int days) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index != -1) {
-      final task = _tasks[index];
-      if (task.lastCompletedDate != null) {
-        final updatedTask = Task(
-          id: task.id,
-          name: task.name,
-          roomId: task.roomId,
-          frequencyValue: task.frequencyValue,
-          frequencyUnit: task.frequencyUnit,
-          lastCompletedDate: task.lastCompletedDate!.subtract(Duration(days: days)),
-          createdAt: task.createdAt,
-          cleanlinessLevel: task.cleanlinessLevel,
-        );
-        
-        _tasks[index] = updatedTask;
-        final newStatus = getTaskStatus(updatedTask);
-        
-        // Trigger a notification every time it is overdue while simulating
-        if (newStatus == TaskStatus.overdue) {
-          js.context.callMethod('showTestNotification', [
-            'CleanTrack Reminder',
-            'It\'s time to clean the ${task.name}!'
-          ]);
-        }
-        
-        await _saveTasks();
-        notifyListeners();
-      }
-    }
-  }
+
+
 
   // Calculate cleanliness decay over time
   double getCalculatedCleanlinessLevel(Task task) {
@@ -310,5 +277,19 @@ class DataService extends ChangeNotifier {
   DateTime? getNextDueDate(Task task) {
     if (task.lastCompletedDate == null) return null;
     return task.lastCompletedDate!.add(Duration(days: task.frequencyDays));
+  }
+
+  /// Helper to ensure notifications are scheduled for 9 AM local time
+  DateTime? _getNotificationDate(DateTime? dueDate) {
+    if (dueDate == null) return null;
+    
+    // Create a new DateTime for the same day but at 9:00 AM
+    return DateTime(
+      dueDate.year,
+      dueDate.month,
+      dueDate.day,
+      9, // 9 AM
+      0, // 0 minutes
+    );
   }
 }

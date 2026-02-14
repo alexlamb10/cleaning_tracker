@@ -35,15 +35,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           title: Text(_getTitle()),
           actions: _selectedIndex == 0
               ? [
-                  IconButton(
-                    icon: const Icon(Icons.notifications_active_outlined),
-                    onPressed: () async {
-                      final dataService = context.read<DataService>();
-                      await dataService.requestNotificationPermission();
-                      dataService.showTestNotification();
-                    },
-                    tooltip: 'Test Notifications',
-                  ),
+
                   IconButton(
                     icon: const Icon(Icons.add_home),
                     onPressed: () {
@@ -65,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _selectedIndex = index;
             });
           },
-          selectedItemColor: const Color(0xFF5FCBAA),
+          selectedItemColor: const Color(0xFF4B5244), // Thicket
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_outlined),
@@ -136,7 +128,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   icon: const Icon(Icons.add),
                   label: const Text('Add Your First Room'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5FCBAA),
+                    backgroundColor: const Color(0xFF4B5244), // Thicket
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     shape: RoundedRectangleBorder(
@@ -250,7 +242,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.check_circle_outline, size: 80, color: Color(0xFF5FCBAA)),
+                Icon(Icons.check_circle_outline, size: 80, color: Color(0xFFA9BDC4)), // Ether
                 SizedBox(height: 16),
                 Text('All caught up!', style: TextStyle(fontSize: 18, color: Colors.grey)),
               ],

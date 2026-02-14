@@ -199,7 +199,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           'Day',
                           style: TextStyle(
                             fontSize: 18,
-                            color: _frequencyUnit == FrequencyUnit.days ? const Color(0xFF5FCBAA) : Colors.grey,
+                            color: _frequencyUnit == FrequencyUnit.days ? const Color(0xFF4B5244) : Colors.grey, // Thicket
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -213,7 +213,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           'Week',
                           style: TextStyle(
                             fontSize: 18,
-                            color: _frequencyUnit == FrequencyUnit.weeks ? const Color(0xFF5FCBAA) : Colors.grey,
+                            color: _frequencyUnit == FrequencyUnit.weeks ? const Color(0xFF4B5244) : Colors.grey, // Thicket
                             fontWeight: FontWeight.w600,
                           ),
                         ),

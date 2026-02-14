@@ -13,7 +13,7 @@ class CircularProgressWheel extends StatefulWidget {
     required this.progress,
     this.onProgressChanged,
     this.size = 60,
-    this.color = const Color(0xFF5FCBAA),
+    this.color = const Color(0xFF4B5244), // Thicket
     this.interactive = true,
   });
 
