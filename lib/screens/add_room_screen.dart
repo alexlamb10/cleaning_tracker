@@ -12,11 +12,6 @@ class AddRoomScreen extends StatefulWidget {
 class _AddRoomScreenState extends State<AddRoomScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  String _selectedIcon = '🏠';
-
-  final List<String> _icons = [
-    '🏠', '🛏️', '🚿', '🍳', '🧺', '🚪', '🪴', '🏡', '🛋️', '🚽'
-  ];
 
   @override
   void dispose() {
@@ -30,75 +25,50 @@ class _AddRoomScreenState extends State<AddRoomScreen> {
       appBar: AppBar(
         title: const Text('Add Room'),
       ),
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Room Name',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter a room name';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            const Text('Select Icon:', style: TextStyle(fontSize: 16)),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _icons.map((icon) {
-                final isSelected = icon == _selectedIcon;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedIcon = icon;
-                    });
-                  },
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: isSelected ? Colors.blue : Colors.grey,
-                        width: isSelected ? 3 : 1,
-                      ),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Center(
-                      child: Text(icon, style: const TextStyle(fontSize: 32)),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () async {
-                if (_formKey.currentState!.validate()) {
-                  final dataService = context.read<DataService>();
-                  await dataService.addRoom(
-                    _nameController.text,
-                    icon: _selectedIcon,
-                  );
-                  if (context.mounted) {
-                    Navigator.pop(context);
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Room Name',
+                  border: OutlineInputBorder(),
+                  hintText: 'e.g., Main Bathroom, Kitchen',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a room name';
                   }
-                }
-              },
-              child: const Padding(
-                padding: EdgeInsets.all(16),
-                child: Text('Add Room', style: TextStyle(fontSize: 18)),
+                  return null;
+                },
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () async {
+                  if (_formKey.currentState!.validate()) {
+                    final dataService = context.read<DataService>();
+                    await dataService.addRoom(_nameController.text);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5FCBAA),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text('Add Room', style: TextStyle(fontSize: 16)),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,25 +1,29 @@
-import 'dart:convert';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
+enum TaskStatus {
+  overdue,
+  dueSoon,
+  upcoming,
+}
 
 class Room {
   final String id;
   final String name;
-  final String icon;
   final String color;
   final DateTime createdAt;
 
   Room({
     required this.id,
     required this.name,
-    required this.icon,
-    required this.color,
+    this.color = 'blue',
     required this.createdAt,
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
-        'icon': icon,
         'color': color,
         'createdAt': createdAt.toIso8601String(),
       };
@@ -27,8 +31,7 @@ class Room {
   factory Room.fromJson(Map<String, dynamic> json) => Room(
         id: json['id'],
         name: json['name'],
-        icon: json['icon'],
-        color: json['color'],
+        color: json['color'] ?? 'blue',
         createdAt: DateTime.parse(json['createdAt']),
       );
 }
