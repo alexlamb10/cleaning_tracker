@@ -49,10 +49,17 @@
     };
 
     window.showTestNotification = function (title, body) {
+      console.log('Attempting notification:', title, body);
       if (Notification.permission === 'granted') {
-        new Notification(title, { body: body });
-        return true;
+        try {
+          new Notification(title, { body: body });
+          return true;
+        } catch (e) {
+          console.error('Notification creation failed:', e);
+        }
       }
+      // Fallback for debugging or if system notifications are blocked
+      alert(title + '\n' + body);
       return false;
     };
   </script>

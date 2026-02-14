@@ -148,12 +148,7 @@ class TaskCard extends StatelessWidget {
                       if (showCountdown) const SizedBox(width: 8),
                       TextButton(
                         onPressed: () async {
-                          await dataService.debugSubtractDays(task.id, 1);
-                          // No need to Navigator.pop, local state in StatefulBuilder will update on next build
-                          // but since we update DataService and it notifies, and we are in a showDialog 
-                          // that isn't automatically rebuilding based on DataService (it's a ctx), 
-                          // we might need to manually trigger a refresh or just rely on the user 
-                          // closing and reopening, but let's try to made it smoother.
+                          await dataService.debugSubtractDays(task.id, 3);
                           setState(() {
                              tempLevel = dataService.getCalculatedCleanlinessLevel(task);
                           });
