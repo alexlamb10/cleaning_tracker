@@ -35,9 +35,20 @@ class DataService extends ChangeNotifier {
     if (tasksJson != null) {
       final List decoded = jsonDecode(tasksJson);
       _tasks = decoded.map((json) => Task.fromJson(json)).toList();
-    }
-
     notifyListeners();
+    checkForOverdueTasks();
+  }
+
+  void checkForOverdueTasks() {
+    final overdueTasks = _tasks.where((t) => getTaskStatus(t) == TaskStatus.overdue).toList();
+    if (overdueTasks.isNotEmpty) {
+      final count = overdueTasks.length;
+      final body = count == 1 
+          ? 'You have 1 task that needs cleaning: ${overdueTasks.first.name}'
+          : 'You have $count tasks that need cleaning.';
+          
+      js.context.callMethod('showTestNotification', ['CleanTrack Reminder', body]);
+    }
   }
 
   Future<void> _saveRooms() async {
