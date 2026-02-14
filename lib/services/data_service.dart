@@ -242,8 +242,8 @@ class DataService extends ChangeNotifier {
         // Trigger a notification every time it is overdue while simulating
         if (newStatus == TaskStatus.overdue) {
           js.context.callMethod('showTestNotification', [
-            'Simulated Warning: ${task.name}',
-            'Cleanliness: ${(getCalculatedCleanlinessLevel(updatedTask) * 100).toInt()}%'
+            'CleanTrack Reminder',
+            'It\'s time to clean the ${task.name}!'
           ]);
         }
         
