@@ -146,24 +146,23 @@ class DataService extends ChangeNotifier {
   Future<void> updateCleanlinessLevel(String taskId, double level) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
-      final task = _tasks[index];
+      final task = _tasks[index]; // Define 'task' here
       
       _tasks[index] = Task(
         id: task.id,
         name: task.name,
         roomId: task.roomId,
-        frequencyValue: task.frequencyValue,
-        frequencyUnit: task.frequencyUnit,
+        frequencyValue: task.frequencyValue, // Use existing frequencyValue
+        frequencyUnit: task.frequencyUnit,   // Use existing frequencyUnit
         lastCompletedDate: DateTime.now(), // Manual update resets the reference time
         createdAt: task.createdAt,
         cleanlinessLevel: level.clamp(0.0, 1.0),
       );
-      );
       await _saveTasks();
       
       // Sync update to Supabase
-      final task = _tasks[index];
-      await _syncService.syncTask(task, getNextDueDate(task));
+      final updatedTask = _tasks[index];
+      await _syncService.syncTask(updatedTask, getNextDueDate(updatedTask));
       
       notifyListeners();
     }
