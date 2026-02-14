@@ -43,4 +43,19 @@ class SupabaseSyncService {
       print('Error removing task from Supabase: $e');
     }
   }
+
+  Future<void> saveSubscription(String subscriptionJson) async {
+    try {
+      final supabase = Supabase.instance.client;
+      await supabase
+          .from('push_subscriptions')
+          .insert({
+            'subscription': subscriptionJson,
+            'updated_at': DateTime.now().toIso8601String(),
+          });
+      print('Saved push subscription to Supabase');
+    } catch (e) {
+      print('Error saving push subscription: $e');
+    }
+  }
 }

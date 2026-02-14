@@ -35,20 +35,8 @@ class DataService extends ChangeNotifier {
     if (tasksJson != null) {
       final List decoded = jsonDecode(tasksJson);
       _tasks = decoded.map((json) => Task.fromJson(json)).toList();
-    notifyListeners();
-    checkForOverdueTasks();
-  }
-
-  void checkForOverdueTasks() {
-    final overdueTasks = _tasks.where((t) => getTaskStatus(t) == TaskStatus.overdue).toList();
-    if (overdueTasks.isNotEmpty) {
-      final count = overdueTasks.length;
-      final body = count == 1 
-          ? 'You have 1 task that needs cleaning: ${overdueTasks.first.name}'
-          : 'You have $count tasks that need cleaning.';
-          
-      js.context.callMethod('showTestNotification', ['CleanTrack Reminder', body]);
     }
+    notifyListeners();
   }
 
   Future<void> _saveRooms() async {
@@ -208,6 +196,24 @@ class DataService extends ChangeNotifier {
   Future<void> requestNotificationPermission() async {
     final status = await js.context.callMethod('requestNotificationPermission');
     print('Notification permission status: $status');
+    
+    if (status == 'granted') {
+      await setupBackgroundPush();
+    }
+  }
+
+  Future<void> setupBackgroundPush() async {
+    // This is the VAPID Public Key - replace with your actual key
+    const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY_HERE';
+    
+    try {
+      final subscription = await js.context.callMethod('subscribeToPush', [vapidPublicKey]);
+      if (subscription != null) {
+        await _syncService.saveSubscription(subscription);
+      }
+    } catch (e) {
+      print('Error setting up background push: $e');
+    }
   }
 
   void showTestNotification() {
