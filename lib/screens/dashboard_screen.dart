@@ -27,6 +27,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           actions: _selectedIndex == 0
               ? [
                   IconButton(
+                    icon: const Icon(Icons.notifications_active_outlined),
+                    onPressed: () async {
+                      final dataService = context.read<DataService>();
+                      await dataService.requestNotificationPermission();
+                      dataService.showTestNotification();
+                    },
+                    tooltip: 'Test Notifications',
+                  ),
+                  IconButton(
                     icon: const Icon(Icons.add_home),
                     onPressed: () {
                       Navigator.push(

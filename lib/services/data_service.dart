@@ -1,6 +1,8 @@
+import 'dart:js' as js;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cleaning_tracker/models/models.dart';
 import 'package:cleaning_tracker/services/supabase_sync_service.dart';
 
 class DataService extends ChangeNotifier {
@@ -193,11 +195,33 @@ class DataService extends ChangeNotifier {
   }
 
   Future<void> requestNotificationPermission() async {
-    // This will typically involve the web_push package logic
-    // for now we'll mock it or use standard JS interop if available.
-    print('Requesting notification permissions...');
-    // In a real app, you would use:
-    // final status = await WebPush.requestPermission();
+    final status = await js.context.callMethod('requestNotificationPermission');
+    print('Notification permission status: $status');
+  }
+
+  void showTestNotification() {
+    js.context.callMethod('showTestNotification', ['CleanTrack Test', 'This is a local notification test! 🧼']);
+  }
+
+  Future<void> debugSubtractDays(String taskId, int days) async {
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index != -1) {
+      final task = _tasks[index];
+      if (task.lastCompletedDate != null) {
+        _tasks[index] = Task(
+          id: task.id,
+          name: task.name,
+          roomId: task.roomId,
+          frequencyValue: task.frequencyValue,
+          frequencyUnit: task.frequencyUnit,
+          lastCompletedDate: task.lastCompletedDate!.subtract(Duration(days: days)),
+          createdAt: task.createdAt,
+          cleanlinessLevel: task.cleanlinessLevel,
+        );
+        await _saveTasks();
+        notifyListeners();
+      }
+    }
   }
 
   // Calculate cleanliness decay over time

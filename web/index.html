@@ -38,6 +38,24 @@
 </head>
 
 <body>
+  <script>
+    window.requestNotificationPermission = async function () {
+      if (!('Notification' in window)) {
+        console.log('This browser does not support notifications.');
+        return 'unsupported';
+      }
+      const permission = await Notification.requestPermission();
+      return permission;
+    };
+
+    window.showTestNotification = function (title, body) {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body: body });
+        return true;
+      }
+      return false;
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 

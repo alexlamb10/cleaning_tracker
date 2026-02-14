@@ -133,15 +133,43 @@ class TaskCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  // Next cleaning countdown
-                  if (showCountdown)
-                    Text(
-                      'Next cleaning in $daysUntilNext ${daysUntilNext == 1 ? 'day' : 'days'}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
+                  // Next cleaning countdown and Debug button
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (showCountdown)
+                        Text(
+                          'Next cleaning in $daysUntilNext ${daysUntilNext == 1 ? 'day' : 'days'}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      if (showCountdown) const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: () async {
+                          await dataService.debugSubtractDays(task.id, 1);
+                          // No need to Navigator.pop, local state in StatefulBuilder will update on next build
+                          // but since we update DataService and it notifies, and we are in a showDialog 
+                          // that isn't automatically rebuilding based on DataService (it's a ctx), 
+                          // we might need to manually trigger a refresh or just rely on the user 
+                          // closing and reopening, but let's try to made it smoother.
+                          setState(() {
+                             tempLevel = dataService.getCalculatedCleanlinessLevel(task);
+                          });
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Simulate 1 Day',
+                          style: TextStyle(fontSize: 12, color: Colors.blue[300]),
+                        ),
                       ),
-                    ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   // Frequency selector
                   Container(
