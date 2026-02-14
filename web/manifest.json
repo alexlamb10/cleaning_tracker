@@ -15,5 +15,5 @@
             "type": "image/svg+xml"
         }
     ],
-    "application_server_key": "YOUR_VAPID_PUBLIC_KEY_HERE"
+    "vapid_public_key": "YOUR_VAPID_PUBLIC_KEY_HERE"
 }

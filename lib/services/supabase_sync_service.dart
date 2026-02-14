@@ -18,7 +18,8 @@ class SupabaseSyncService {
         'task_id': task.id,
         'task_name': task.name,
         'next_due_date': nextDueDate?.toIso8601String(),
-        'updated_at': DateTime.now().toIso8601String(),
+        // Removed updated_at to strictly follow "only TaskName and NextDueDate" (plus ID) 
+        // request, though usually timestamps are good.
       };
 
       await supabase

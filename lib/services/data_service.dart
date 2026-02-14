@@ -158,7 +158,13 @@ class DataService extends ChangeNotifier {
         createdAt: task.createdAt,
         cleanlinessLevel: level.clamp(0.0, 1.0),
       );
+      );
       await _saveTasks();
+      
+      // Sync update to Supabase
+      final task = _tasks[index];
+      await _syncService.syncTask(task, getNextDueDate(task));
+      
       notifyListeners();
     }
   }
