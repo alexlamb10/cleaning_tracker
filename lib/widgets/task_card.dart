@@ -16,11 +16,23 @@ class TaskCard extends StatelessWidget {
 
     showDialog(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.3),
       builder: (ctx) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        backgroundColor: Colors.transparent,
         child: Container(
-          padding: const EdgeInsets.all(24),
-          constraints: const BoxConstraints(maxWidth: 300),
+          padding: const EdgeInsets.all(32),
+          constraints: const BoxConstraints(maxWidth: 340),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
           child: StatefulBuilder(
             builder: (context, setState) {
               String getLevelText() {
@@ -34,52 +46,80 @@ class TaskCard extends StatelessWidget {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const SizedBox(width: 40),
-                      const Text(
-                        'How clean is it now?',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                  // Close button
+                  Align(
+                    alignment: Alignment.topLeft,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFF6B6B),
+                        shape: BoxShape.circle,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.red),
+                      child: IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white, size: 20),
                         onPressed: () => Navigator.pop(context),
+                        padding: EdgeInsets.zero,
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 16),
+                  // Title
+                  const Text(
+                    'How clean is it now?',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  // Large circular wheel
                   CircularProgressWheel(
                     progress: tempLevel,
-                    size: 180,
+                    size: 200,
                     onProgressChanged: (value) {
                       setState(() {
                         tempLevel = value;
                       });
                     },
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 24),
+                  // Status text
                   Text(
                     getLevelText(),
                     style: const TextStyle(
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.w500,
                       color: Colors.black87,
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 40),
+                  // Confirm button
                   Align(
                     alignment: Alignment.bottomRight,
-                    child: FloatingActionButton(
-                      onPressed: () {
-                        dataService.updateCleanlinessLevel(task.id, tempLevel);
-                        Navigator.pop(context);
-                      },
-                      backgroundColor: const Color(0xFF5FCBAA),
-                      child: const Icon(Icons.check, color: Colors.white),
+                    child: Container(
+                      width: 56,
+                      height: 56,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF5FCBAA),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0x405FCBAA),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.check, color: Colors.white, size: 28),
+                        onPressed: () {
+                          dataService.updateCleanlinessLevel(task.id, tempLevel);
+                          Navigator.pop(context);
+                        },
+                        padding: EdgeInsets.zero,
+                      ),
                     ),
                   ),
                 ],
@@ -110,16 +150,16 @@ class TaskCard extends StatelessWidget {
         return GestureDetector(
           onTap: () => _showCleanlinessDialog(context),
           child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            padding: const EdgeInsets.all(16),
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 15,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
@@ -132,25 +172,27 @@ class TaskCard extends StatelessWidget {
                       Text(
                         task.name,
                         style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
                           color: Colors.black87,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         getDueText(),
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey[600],
+                          fontWeight: FontWeight.w400,
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(width: 16),
                 CircularProgressWheel(
                   progress: level,
-                  size: 50,
+                  size: 60,
                   interactive: false,
                 ),
               ],

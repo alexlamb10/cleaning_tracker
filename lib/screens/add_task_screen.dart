@@ -23,6 +23,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void initState() {
     super.initState();
     _selectedRoomId = widget.preselectedRoomId;
+    _frequencyController.text = '1'; // Default to 1 week
   }
 
   @override
@@ -103,24 +104,96 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               },
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _frequencyController,
-              decoration: const InputDecoration(
-                labelText: 'Frequency (days)',
-                border: OutlineInputBorder(),
-                helperText: 'How often should this task be done?',
+            // Frequency selector with +/- buttons
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey[300]!),
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Please enter frequency';
-                }
-                final freq = int.tryParse(value);
-                if (freq == null || freq <= 0) {
-                  return 'Please enter a valid number';
-                }
-                return null;
-              },
+              child: Column(
+                children: [
+                  const Text(
+                    'Do every',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Minus button
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.remove, size: 20),
+                          onPressed: () {
+                            final current = int.tryParse(_frequencyController.text) ?? 1;
+                            if (current > 1) {
+                              setState(() {
+                                _frequencyController.text = (current - 1).toString();
+                              });
+                            }
+                          },
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      // Number display
+                      SizedBox(
+                        width: 60,
+                        child: Text(
+                          _frequencyController.text.isEmpty ? '1' : _frequencyController.text,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      // Plus button
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[200],
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add, size: 20),
+                          onPressed: () {
+                            final current = int.tryParse(_frequencyController.text) ?? 1;
+                            setState(() {
+                              _frequencyController.text = (current + 1).toString();
+                            });
+                          },
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Week',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: Color(0xFF5FCBAA),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
             const Text(
