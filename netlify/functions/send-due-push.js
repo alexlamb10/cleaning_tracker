@@ -1,108 +1,98 @@
 /**
- * Netlify scheduled function: query Supabase for tasks due (next_due_date <= now),
- * fetch push_subscriptions, and send a Web Push notification per subscription.
+ * Netlify Scheduled Function: send-due-push
  *
- * Required env vars (set in Netlify UI):
- *   SUPABASE_URL, SUPABASE_ANON_KEY (or SUPABASE_SERVICE_ROLE_KEY),
- *   VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY
+ * Runs on a cron schedule (set in netlify.toml).
+ * Queries Supabase for tasks whose next_due_date has passed,
+ * then sends a Web Push notification to the linked subscription.
  *
- * Schedule: set in netlify.toml, e.g. "0 9 * * *" (daily 9 AM UTC) or "0 */30 * * *" (every 30 min).
+ * Required environment variables (set in Netlify dashboard → Site settings → Env vars):
+ *   SUPABASE_URL          — your project URL
+ *   SUPABASE_SERVICE_KEY  — service role key (NOT anon — needs to read all rows)
+ *   VAPID_PUBLIC_KEY      — base64url VAPID public key
+ *   VAPID_PRIVATE_KEY     — base64url VAPID private key
+ *   VAPID_SUBJECT         — must be a mailto: address, e.g. mailto:you@yourapp.com
+ *
+ * netlify.toml schedule example:
+ *   [functions."send-due-push"]
+ *     schedule = "0 9 * * *"   # fires at 9:00 AM UTC daily
  */
 
-const { createClient } = require('@supabase/supabase-js');
 const webpush = require('web-push');
+const { createClient } = require('@supabase/supabase-js');
 
-function getEnv(name) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
+exports.handler = async () => {
+    // ── Validate env vars ────────────────────────────────────────────────────
+    const {
+        SUPABASE_URL,
+        SUPABASE_SERVICE_KEY,
+        VAPID_PUBLIC_KEY,
+        VAPID_PRIVATE_KEY,
+        VAPID_SUBJECT,
+    } = process.env;
 
-async function run() {
-  const now = new Date().toISOString();
-
-  const supabaseUrl = getEnv('SUPABASE_URL');
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || getEnv('SUPABASE_ANON_KEY');
-  const vapidPublicKey = getEnv('VAPID_PUBLIC_KEY');
-  const vapidPrivateKey = getEnv('VAPID_PRIVATE_KEY');
-
-  webpush.setVapidDetails(
-    'mailto:support@cleantrack.app',
-    vapidPublicKey,
-    vapidPrivateKey
-  );
-
-  const supabase = createClient(supabaseUrl, supabaseKey);
-
-  // Tasks whose next_due_date is in the past or now
-  const { data: dueTasks, error: tasksError } = await supabase
-    .from('push_tasks')
-    .select('task_id, task_name, next_due_date')
-    .lte('next_due_date', now)
-    .not('next_due_date', 'is', null);
-
-  if (tasksError) {
-    console.error('Supabase push_tasks error:', tasksError);
-    throw new Error(tasksError.message);
-  }
-
-  if (!dueTasks || dueTasks.length === 0) {
-    console.log('No due tasks');
-    return;
-  }
-
-  const { data: subs, error: subsError } = await supabase
-    .from('push_subscriptions')
-    .select('subscription')
-    .order('updated_at', { ascending: false });
-
-  if (subsError) {
-    console.error('Supabase push_subscriptions error:', subsError);
-    throw new Error(subsError.message);
-  }
-
-  if (!subs || subs.length === 0) {
-    console.log('No push subscriptions');
-    return;
-  }
-
-  let sent = 0;
-  const payload = (task) => JSON.stringify({
-    title: task.task_name,
-    body: 'Time to clean!',
-  });
-
-  for (const task of dueTasks) {
-    for (const row of subs) {
-      let sub;
-      try {
-        sub = typeof row.subscription === 'string' ? JSON.parse(row.subscription) : row.subscription;
-      } catch (e) {
-        console.warn('Invalid subscription JSON:', e);
-        continue;
-      }
-      try {
-        await webpush.sendNotification(sub, payload(task));
-        sent++;
-      } catch (e) {
-        if (e.statusCode === 410 || e.statusCode === 404) {
-          console.warn('Subscription expired or invalid:', e.message);
-        } else {
-          console.warn('Web push failed:', e.message);
-        }
-      }
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+        console.error('Missing SUPABASE_URL or SUPABASE_SERVICE_KEY');
+        return { statusCode: 500, body: 'Missing Supabase env vars' };
     }
-  }
+    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) {
+        console.error('Missing VAPID env vars');
+        return { statusCode: 500, body: 'Missing VAPID env vars' };
+    }
 
-  console.log(`Sent ${sent} notification(s) for ${dueTasks.length} due task(s)`);
-}
+    webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
-exports.handler = async function (event) {
-  try {
-    await run();
-    return { statusCode: 200, body: '' };
-  } catch (err) {
-    console.error('send-due-push error:', err);
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
-  }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+
+    // ── Fetch due tasks joined with their push subscription ──────────────────
+    const now = new Date().toISOString();
+    const { data: dueTasks, error } = await supabase
+        .from('push_tasks')
+        .select('task_id, task_name, next_due_date, push_subscriptions(*)')
+        .lte('next_due_date', now);
+
+    if (error) {
+        console.error('Supabase query error:', error);
+        return { statusCode: 500, body: 'Supabase error' };
+    }
+
+    if (!dueTasks || dueTasks.length === 0) {
+        console.log('No due tasks at', now);
+        return { statusCode: 200, body: 'No due tasks' };
+    }
+
+    console.log(`Sending ${dueTasks.length} push notification(s)`);
+
+    // ── Send a push for each due task ────────────────────────────────────────
+    const results = await Promise.allSettled(
+        dueTasks.map(async (task) => {
+            const sub = task.push_subscriptions;
+            if (!sub || !sub.subscription) {
+                console.warn(`No subscription linked for task: ${task.task_id}`);
+                return;
+            }
+
+            const payload = JSON.stringify({
+                title: 'CleanTrack Reminder',
+                body: `Time to clean: ${task.task_name}`,
+                icon: '/icons/Icon-192.png',
+                badge: '/icons/Icon-192.png',
+                tag: task.task_id, // deduplicates notifications on the device
+            });
+
+            await webpush.sendNotification(
+                JSON.parse(sub.subscription),
+                payload
+            );
+            console.log(`Sent push for task: ${task.task_name}`);
+        })
+    );
+
+    // Log any individual send failures (expired subscriptions, etc.)
+    results.forEach((result, i) => {
+        if (result.status === 'rejected') {
+            console.error(`Push failed for task index ${i}:`, result.reason);
+        }
+    });
+
+    return { statusCode: 200, body: `Sent ${dueTasks.length} notification(s)` };
 };

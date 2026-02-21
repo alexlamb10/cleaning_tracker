@@ -8,13 +8,17 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Supabase.initialize(
-    url: 'YOUR_SUPABASE_URL',
-    anonKey: 'YOUR_SUPABASE_ANON_KEY',
+    url: const String.fromEnvironment('SUPABASE_URL'),
+    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
   );
 
+  // Load data before runApp to prevent empty-list flash on startup
+  final dataService = DataService();
+  await dataService.loadData();
+
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => DataService(),
+    ChangeNotifierProvider.value(
+      value: dataService,
       child: const CleanTrackApp(),
     ),
   );
@@ -38,9 +42,9 @@ class CleanTrackApp extends StatelessWidget {
         ),
         scaffoldBackgroundColor: const Color(0xFFD9CDBF), // Bone
         cardTheme: const CardThemeData(
-          color: Colors.white, // Keep white for contrast, or maybe very light Bone
+          color: Colors.white,
           elevation: 2,
-          shadowColor: Color(0x1A4B5244), // Thicket with opacity
+          shadowColor: Color(0x1A4B5244),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.all(Radius.circular(20)),
           ),
@@ -48,16 +52,16 @@ class CleanTrackApp extends StatelessWidget {
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
           elevation: 0,
-          iconTheme: IconThemeData(color: Color(0xFF121212)), // Ink
+          iconTheme: IconThemeData(color: Color(0xFF121212)),
           titleTextStyle: TextStyle(
-            color: Color(0xFF121212), // Ink
+            color: Color(0xFF121212),
             fontSize: 20,
             fontWeight: FontWeight.w600,
           ),
         ),
         textTheme: const TextTheme(
-          bodyMedium: TextStyle(color: Color(0xFF121212)), // Ink
-          titleMedium: TextStyle(color: Color(0xFF121212)), // Ink
+          bodyMedium: TextStyle(color: Color(0xFF121212)),
+          titleMedium: TextStyle(color: Color(0xFF121212)),
         ),
       ),
       home: const DashboardScreen(),

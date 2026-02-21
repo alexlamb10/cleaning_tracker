@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 class CircularProgressWheel extends StatefulWidget {
   final double progress; // 0.0 to 1.0
   final ValueChanged<double>? onProgressChanged;
+  /// Called once when the user lifts their finger — use this to trigger saves.
+  final ValueChanged<double>? onChangeEnd;
   final double size;
   final Color color;
   final bool interactive;
@@ -12,6 +14,7 @@ class CircularProgressWheel extends StatefulWidget {
     super.key,
     required this.progress,
     this.onProgressChanged,
+    this.onChangeEnd,
     this.size = 60,
     this.color = const Color(0xFF4B5244), // Thicket
     this.interactive = true,
@@ -46,13 +49,12 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
       localPosition.dy - center.dy,
       localPosition.dx - center.dx,
     );
-    
-    // Convert angle to progress (0 to 1)
-    // Start from top (270 degrees/-pi/2) and go clockwise
+
     double normalizedAngle = angle + pi / 2;
     if (normalizedAngle < 0) normalizedAngle += 2 * pi;
-    
+
     double newProgress = normalizedAngle / (2 * pi);
+<<<<<<< HEAD
     
     // Allow smooth dragging - only prevent extreme jumps that are clearly wrapping
     // This allows the wheel to update smoothly as the user drags
@@ -66,16 +68,29 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
         newProgress = 0.0;
       } else if (_currentProgress > 0.9 && newProgress < 0.1) {
         // Very close to 1, jumped to very close to 0 - prevent wrap, stay at 1
+=======
+
+    final diff = (newProgress - _currentProgress).abs();
+    if (diff > 0.8) {
+      if (_currentProgress < 0.1 && newProgress > 0.9) {
+        newProgress = 0.0;
+      } else if (_currentProgress > 0.9 && newProgress < 0.1) {
+>>>>>>> 0cc8ae8 (feat: Implement push notification services and a Netlify function for due reminders, and enhance the circular progress wheel with a broom icon and drag end callback.)
         newProgress = 1.0;
       }
       // For other large jumps, allow them (user might be dragging quickly)
     }
-    
+
     setState(() {
       _currentProgress = newProgress.clamp(0.0, 1.0);
     });
-    
+
     widget.onProgressChanged?.call(_currentProgress);
+  }
+
+  void _onDragEnd() {
+    // Fires once when the user releases — used to auto-save without requiring a confirm tap
+    widget.onChangeEnd?.call(_currentProgress);
   }
 
   @override
@@ -84,6 +99,7 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
       onPanUpdate: widget.interactive
           ? (details) => _updateProgress(details.localPosition)
           : null,
+      onPanEnd: widget.interactive ? (_) => _onDragEnd() : null,
       onTapDown: widget.interactive
           ? (details) => _updateProgress(details.localPosition)
           : null,
@@ -105,10 +121,7 @@ class _CircularProgressPainter extends CustomPainter {
   final double progress;
   final Color color;
 
-  _CircularProgressPainter({
-    required this.progress,
-    required this.color,
-  });
+  _CircularProgressPainter({required this.progress, required this.color});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -116,13 +129,12 @@ class _CircularProgressPainter extends CustomPainter {
     final radius = size.width / 2;
     final strokeWidth = size.width * 0.15;
 
-    // Background circle (light)
+    // Background track
     final backgroundPaint = Paint()
       ..color = color.withOpacity(0.2)
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
-
     canvas.drawCircle(center, radius - strokeWidth / 2, backgroundPaint);
 
     // Progress arc
@@ -131,38 +143,53 @@ class _CircularProgressPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
-
     final sweepAngle = 2 * pi * progress;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius - strokeWidth / 2),
-      -pi / 2, // Start from top
+      -pi / 2,
       sweepAngle,
       false,
       progressPaint,
     );
 
-    // Draggable handle
+    // Broom knob — replaces the plain white dot
     if (progress > 0) {
       final handleAngle = -pi / 2 + sweepAngle;
-      final handleX = center.dx + (radius - strokeWidth / 2) * cos(handleAngle);
-      final handleY = center.dy + (radius - strokeWidth / 2) * sin(handleAngle);
-      
-      final handlePaint = Paint()
+      final handleX =
+          center.dx + (radius - strokeWidth / 2) * cos(handleAngle);
+      final handleY =
+          center.dy + (radius - strokeWidth / 2) * sin(handleAngle);
+
+      // White backing circle for contrast
+      final handleBgPaint = Paint()
         ..color = Colors.white
         ..style = PaintingStyle.fill;
-      
       final handleBorderPaint = Paint()
         ..color = color
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3;
+        ..strokeWidth = 2.5;
 
-      canvas.drawCircle(Offset(handleX, handleY), strokeWidth * 0.6, handlePaint);
-      canvas.drawCircle(Offset(handleX, handleY), strokeWidth * 0.6, handleBorderPaint);
+      final knobRadius = strokeWidth * 0.7;
+      canvas.drawCircle(Offset(handleX, handleY), knobRadius, handleBgPaint);
+      canvas.drawCircle(Offset(handleX, handleY), knobRadius, handleBorderPaint);
+
+      // Broom emoji rendered onto the knob
+      final tp = TextPainter(
+        text: TextSpan(
+          text: '🧹',
+          style: TextStyle(fontSize: knobRadius * 1.2),
+        ),
+        textDirection: TextDirection.ltr,
+      );
+      tp.layout();
+      tp.paint(
+        canvas,
+        Offset(handleX - tp.width / 2, handleY - tp.height / 2),
+      );
     }
   }
 
   @override
-  bool shouldRepaint(_CircularProgressPainter oldDelegate) {
-    return oldDelegate.progress != progress || oldDelegate.color != color;
-  }
+  bool shouldRepaint(_CircularProgressPainter oldDelegate) =>
+      oldDelegate.progress != progress || oldDelegate.color != color;
 }

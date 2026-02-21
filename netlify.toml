@@ -12,6 +12,6 @@
 [functions]
   node_bundler = "esbuild"
 
-# Run send-due-push every day at 09:00 UTC. Adjust for your timezone or use "0 */30 * * *" for every 30 min.
+# Run send-due-push every hour to stay on top of notifications at 9 AM local time
 [functions."send-due-push"]
-  schedule = "0 9 * * *"
+  schedule = "0 * * * *"
