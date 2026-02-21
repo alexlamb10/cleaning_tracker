@@ -54,17 +54,21 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
     
     double newProgress = normalizedAngle / (2 * pi);
     
-    // Prevent wrapping logic
-    // If the jump is too large (likely crossing the 0/1 boundary), clamp to the nearest end
-    const wrapThreshold = 0.5;
-    if ((newProgress - _currentProgress).abs() > wrapThreshold) {
-      if (newProgress < _currentProgress) {
-        // Wrapped clockwise (e.g. 0.9 -> 0.1). Clamp to 1.0
-        newProgress = 1.0;
-      } else {
-        // Wrapped counter-clockwise (e.g. 0.1 -> 0.9). Clamp to 0.0
+    // Allow smooth dragging - only prevent extreme jumps that are clearly wrapping
+    // This allows the wheel to update smoothly as the user drags
+    final diff = (newProgress - _currentProgress).abs();
+    
+    // Only prevent wrap if we're making a very large jump (> 80% of circle)
+    // AND we're near a boundary (which suggests accidental wrap)
+    if (diff > 0.8) {
+      if (_currentProgress < 0.1 && newProgress > 0.9) {
+        // Very close to 0, jumped to very close to 1 - prevent wrap, stay at 0
         newProgress = 0.0;
+      } else if (_currentProgress > 0.9 && newProgress < 0.1) {
+        // Very close to 1, jumped to very close to 0 - prevent wrap, stay at 1
+        newProgress = 1.0;
       }
+      // For other large jumps, allow them (user might be dragging quickly)
     }
     
     setState(() {
