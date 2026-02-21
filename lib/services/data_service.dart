@@ -147,24 +147,31 @@ class DataService extends ChangeNotifier {
   Future<void> updateCleanlinessLevel(String taskId, double level) async {
     final index = _tasks.indexWhere((t) => t.id == taskId);
     if (index != -1) {
-      final task = _tasks[index]; // Define 'task' here
-      
+      final task = _tasks[index];
+      final levelClamped = level.clamp(0.0, 1.0);
+
+      // Match the modal preview: "days until next" = level * frequencyDays.
+      // So nextDueDate = now + (level * frequencyDays). We store lastCompletedDate
+      // so that lastCompletedDate + frequencyDays = now + level * frequencyDays,
+      // i.e. lastCompletedDate = now - (1 - level) * frequencyDays.
+      final daysToSubtract = ((1.0 - levelClamped) * task.frequencyDays).round().clamp(0, task.frequencyDays);
+      final lastCompletedDate = DateTime.now().subtract(Duration(days: daysToSubtract));
+
       _tasks[index] = Task(
         id: task.id,
         name: task.name,
         roomId: task.roomId,
-        frequencyValue: task.frequencyValue, // Use existing frequencyValue
-        frequencyUnit: task.frequencyUnit,   // Use existing frequencyUnit
-        lastCompletedDate: DateTime.now(), // Manual update resets the reference time
+        frequencyValue: task.frequencyValue,
+        frequencyUnit: task.frequencyUnit,
+        lastCompletedDate: lastCompletedDate,
         createdAt: task.createdAt,
-        cleanlinessLevel: level.clamp(0.0, 1.0),
+        cleanlinessLevel: levelClamped,
       );
       await _saveTasks();
-      
-      // Sync update to Supabase
+
       final updatedTask = _tasks[index];
       await _syncService.syncTask(updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
-      
+
       notifyListeners();
     }
   }
@@ -188,6 +195,8 @@ class DataService extends ChangeNotifier {
         cleanlinessLevel: task.cleanlinessLevel,
       );
       await _saveTasks();
+      final updatedTask = _tasks[index];
+      await _syncService.syncTask(updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
       notifyListeners();
     }
   }
@@ -222,14 +231,17 @@ class DataService extends ChangeNotifier {
   }
 
   Future<void> setupBackgroundPush() async {
-    // This is the VAPID Public Key - replace with your actual key
-    const vapidPublicKey = 'YOUR_VAPID_PUBLIC_KEY_HERE';
-    
+    // VAPID public key: set via --dart-define=VAPID_PUBLIC_KEY=your_base64_key at build time,
+    // or replace the default below. Must match the key pair used by the Netlify send-due-push function.
+    final vapidPublicKey = String.fromEnvironment(
+      'VAPID_PUBLIC_KEY',
+      defaultValue: 'YOUR_VAPID_PUBLIC_KEY_HERE',
+    );
+
     if (vapidPublicKey == 'YOUR_VAPID_PUBLIC_KEY_HERE') {
       print('WARNING: VAPID Public Key is not set. Background push notifications will not work.');
-      // We continue for now as local notifications might still work via simulation
     }
-    
+
     try {
       final promise = js.context.callMethod('subscribeToPush', [vapidPublicKey]);
       final subscription = await js_util.promiseToFuture(promise);

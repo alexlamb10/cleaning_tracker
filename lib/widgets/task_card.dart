@@ -12,7 +12,12 @@ class TaskCard extends StatelessWidget {
 
   void _showTaskDetailDialog(BuildContext context) {
     final dataService = context.read<DataService>();
-    double tempLevel = dataService.getCalculatedCleanlinessLevel(task);
+    // Initialize tempLevel from the current "days until next" to match what the card shows
+    // This ensures the modal opens with the same value the user sees on the card
+    final daysUntil = dataService.getDaysUntilNextCleaning(task);
+    double tempLevel = daysUntil != null && daysUntil > 0 && task.frequencyDays > 0
+        ? (daysUntil / task.frequencyDays).clamp(0.0, 1.0)
+        : dataService.getCalculatedCleanlinessLevel(task);
     int tempFrequencyValue = task.frequencyValue;
     FrequencyUnit tempFrequencyUnit = task.frequencyUnit;
 
@@ -44,9 +49,6 @@ class TaskCard extends StatelessWidget {
                 if (tempLevel >= 0.3) return "Getting dirty";
                 return "Needs cleaning";
               }
-
-              final daysUntilNext = dataService.getDaysUntilNextCleaning(task);
-              final showCountdown = tempLevel >= 0.9 && daysUntilNext != null && daysUntilNext > 0;
 
               return Column(
                 mainAxisSize: MainAxisSize.min,
@@ -133,19 +135,47 @@ class TaskCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  // Next cleaning countdown
-                  if (showCountdown)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 24),
-                      child: Text(
-                        'Next cleaning in $daysUntilNext ${daysUntilNext == 1 ? 'day' : 'days'}',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[600],
+                  // Live preview: days until next cleaning based on current dial + frequency
+                  // This updates in real-time as the user drags the wheel or changes frequency
+                  // tempLevel (0.0-1.0) represents how much of the cleaning cycle remains
+                  Builder(
+                    builder: (context) {
+                      // Recalculate frequency days from current temp values
+                      final currentFreqDays = tempFrequencyUnit == FrequencyUnit.weeks
+                          ? tempFrequencyValue * 7
+                          : tempFrequencyValue;
+                      
+                      // Calculate preview: tempLevel * frequencyDays = days remaining
+                      // Use ceil to ensure we show at least 1 day if there's any time left
+                      final daysRemaining = tempLevel * currentFreqDays;
+                      final previewDays = daysRemaining <= 0 
+                          ? 0 
+                          : (daysRemaining < 1 ? 1 : daysRemaining.ceil());
+                      
+                      final canShow = tempLevel > 0 && currentFreqDays > 0;
+                      
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 24),
+                        child: Column(
+                          children: [
+                            Text(
+                              canShow
+                                  ? (previewDays == 0
+                                      ? 'Next cleaning: today'
+                                      : 'Next cleaning: ${previewDays == 1 ? '1 day' : '$previewDays days'} from now')
+                                  : 'Next cleaning: not set',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
+                      );
+                    },
+                  ),
                   const SizedBox(height: 24),
                   // Frequency selector
                   Container(
@@ -337,8 +367,13 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dataService = context.watch<DataService>();
-    final cleanlinessLevel = dataService.getCalculatedCleanlinessLevel(task);
-    final status = dataService.getTaskStatus(task);
+    // Always resolve the current task from DataService so the list shows updated
+    // due date / days remaining after the user saves from the edit modal
+    final idx = dataService.tasks.indexWhere((t) => t.id == task.id);
+    final currentTask = idx >= 0 ? dataService.tasks[idx] : task;
+
+    final cleanlinessLevel = dataService.getCalculatedCleanlinessLevel(currentTask);
+    final status = dataService.getTaskStatus(currentTask);
 
     Color getStatusColor() {
       switch (status) {
@@ -352,10 +387,10 @@ class TaskCard extends StatelessWidget {
     }
 
     String getDueDateText() {
-      final nextDue = dataService.getNextDueDate(task);
+      final nextDue = dataService.getNextDueDate(currentTask);
       if (nextDue == null) return 'Never cleaned';
       
-      final daysUntil = dataService.getDaysUntilNextCleaning(task);
+      final daysUntil = dataService.getDaysUntilNextCleaning(currentTask);
       if (daysUntil == null) return 'Never cleaned';
       
       if (daysUntil <= 0) {
@@ -391,7 +426,7 @@ class TaskCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    task.name,
+                    currentTask.name,
                     style: const TextStyle(
                       fontSize: 17,
                       fontWeight: FontWeight.w600,

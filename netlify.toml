@@ -7,3 +7,11 @@
 [build]
   publish = "build/web"
   command = "if [ ! -d \"flutter\" ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable flutter; fi && ./flutter/bin/flutter build web --release"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+# Run send-due-push every day at 09:00 UTC. Adjust for your timezone or use "0 */30 * * *" for every 30 min.
+[functions."send-due-push"]
+  schedule = "0 9 * * *"

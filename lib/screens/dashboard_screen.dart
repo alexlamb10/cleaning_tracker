@@ -21,7 +21,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    // Request notification permission on first launch
+    // Optional: request notification permission after first paint. On Safari/iOS, permission
+    // is often granted only in response to a user gesture; use the "Enable notifications"
+    // button in the notification banner for best results.
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Delay slightly to ensure PWA environment is stable on mobile launch
       await Future.delayed(const Duration(milliseconds: 1500));
