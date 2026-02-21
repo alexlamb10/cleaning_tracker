@@ -54,8 +54,6 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
     if (normalizedAngle < 0) normalizedAngle += 2 * pi;
 
     double newProgress = normalizedAngle / (2 * pi);
-<<<<<<< HEAD
-    
     // Allow smooth dragging - only prevent extreme jumps that are clearly wrapping
     // This allows the wheel to update smoothly as the user drags
     final diff = (newProgress - _currentProgress).abs();
@@ -68,14 +66,10 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
         newProgress = 0.0;
       } else if (_currentProgress > 0.9 && newProgress < 0.1) {
         // Very close to 1, jumped to very close to 0 - prevent wrap, stay at 1
-=======
-
-    final diff = (newProgress - _currentProgress).abs();
-    if (diff > 0.8) {
-      if (_currentProgress < 0.1 && newProgress > 0.9) {
-        newProgress = 0.0;
-      } else if (_currentProgress > 0.9 && newProgress < 0.1) {
->>>>>>> 0cc8ae8 (feat: Implement push notification services and a Netlify function for due reminders, and enhance the circular progress wheel with a broom icon and drag end callback.)
+        newProgress = 1.0;
+      }
+      // For other large jumps, allow them (user might be dragging quickly)
+    }
         newProgress = 1.0;
       }
       // For other large jumps, allow them (user might be dragging quickly)
