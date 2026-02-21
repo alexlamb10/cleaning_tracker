@@ -70,10 +70,6 @@ class _CircularProgressWheelState extends State<CircularProgressWheel> {
       }
       // For other large jumps, allow them (user might be dragging quickly)
     }
-        newProgress = 1.0;
-      }
-      // For other large jumps, allow them (user might be dragging quickly)
-    }
 
     setState(() {
       _currentProgress = newProgress.clamp(0.0, 1.0);
