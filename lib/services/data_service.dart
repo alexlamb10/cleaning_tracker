@@ -150,6 +150,9 @@ class DataService extends ChangeNotifier {
         cleanlinessLevel: 1.0,
       );
       await _saveTasks();
+      final updatedTask = _tasks[index];
+      await _firestoreService.syncTask(
+          updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
       notifyListeners();
     }
   }
