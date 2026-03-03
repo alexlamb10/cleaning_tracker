@@ -1,34 +1,44 @@
 // Web implementation — only compiled on flutter web targets.
-// Uses dart:js / dart:js_util which are unavailable on mobile.
-import 'dart:js' as js;
-import 'dart:js_util' as js_util;
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationService {
   static Future<String> requestPermission() async {
     try {
-      final promise = js.context.callMethod('requestNotificationPermission');
-      final status = await js_util.promiseToFuture<String>(promise);
-      return status;
+      NotificationSettings settings = await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+      
+      if (settings.authorizationStatus == AuthorizationStatus.authorized) {
+        return 'granted';
+      } else if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        return 'denied';
+      }
+      return 'default';
     } catch (e) {
+      debugPrint('Error requesting permission: $e');
       return 'unsupported';
     }
   }
 
   static String getPermission() {
-    try {
-      return js.context.callMethod('getNotificationPermission') as String;
-    } catch (e) {
-      return 'unsupported';
-    }
+    return 'unknown';
   }
 
-  static Future<String?> subscribeToPush(String vapidKey) async {
+  static Future<String?> getToken(String vapidKey) async {
     try {
-      final promise = js.context.callMethod('subscribeToPush', [vapidKey]);
-      final result = await js_util.promiseToFuture<dynamic>(promise);
-      return result?.toString();
+      return await FirebaseMessaging.instance.getToken(vapidKey: vapidKey);
     } catch (e) {
+      debugPrint('Error getting FCM token: $e');
       return null;
     }
   }
+
+  static Future<String?> subscribeToPush(String vapidKey) => getToken(vapidKey);
 }

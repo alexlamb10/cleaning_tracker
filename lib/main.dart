@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:cleaning_tracker/services/data_service.dart';
 import 'package:cleaning_tracker/screens/dashboard_screen.dart';
@@ -7,9 +7,16 @@ import 'package:cleaning_tracker/screens/dashboard_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY'),
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+      apiKey: "AIzaSyAKTuQc_mPQqym6UesK4u7KV0OR7oQ4nV8",
+      authDomain: "cleaning-tracker-5408d.firebaseapp.com",
+      projectId: "cleaning-tracker-5408d",
+      storageBucket: "cleaning-tracker-5408d.firebasestorage.app",
+      messagingSenderId: "621678496436",
+      appId: "1:621678496436:web:63d1b0c900ab8965cee5e1",
+      measurementId: "G-XTXZF7SLXQ",
+    ),
   );
 
   // Load data before runApp to prevent empty-list flash on startup

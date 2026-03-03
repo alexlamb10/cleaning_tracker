@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cleaning_tracker/models/models.dart';
-import 'package:cleaning_tracker/services/supabase_sync_service.dart';
+import 'package:cleaning_tracker/services/firestore_service.dart';
 import 'package:cleaning_tracker/services/notification_service.dart'
     if (dart.library.js) 'package:cleaning_tracker/services/notification_web.dart';
 
@@ -12,14 +13,29 @@ class DataService extends ChangeNotifier {
   static const _tasksKey = 'tasks';
   static const _uuid = Uuid();
 
-  final SupabaseSyncService _syncService = SupabaseSyncService();
+  final FirestoreService _firestoreService = FirestoreService();
   List<Room> _rooms = [];
   List<Task> _tasks = [];
 
   List<Room> get rooms => _rooms;
   List<Task> get tasks => _tasks;
 
-  DataService();
+  DataService() {
+    _initForegroundMessaging();
+  }
+
+  void _initForegroundMessaging() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      debugPrint('Got a message whilst in the foreground!');
+      debugPrint('Message data: ${message.data}');
+
+      if (message.notification != null) {
+        debugPrint('Message also contained a notification: ${message.notification}');
+        // You could show a local snackbar here if desired, 
+        // but per instructions we avoid UI updates.
+      }
+    });
+  }
 
   /// Public so main() can await it before runApp(), preventing empty-list flash.
   Future<void> loadData() async {
@@ -115,7 +131,7 @@ class DataService extends ChangeNotifier {
 
     _tasks.add(task);
     await _saveTasks();
-    await _syncService.syncTask(task, _getNotificationDate(getNextDueDate(task)));
+    await _firestoreService.syncTask(task, _getNotificationDate(getNextDueDate(task)));
     notifyListeners();
   }
 
@@ -161,7 +177,7 @@ class DataService extends ChangeNotifier {
       await _saveTasks();
 
       final updatedTask = _tasks[index];
-      await _syncService.syncTask(
+      await _firestoreService.syncTask(
           updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
       notifyListeners();
     }
@@ -184,7 +200,7 @@ class DataService extends ChangeNotifier {
       );
       await _saveTasks();
       final updatedTask = _tasks[index];
-      await _syncService.syncTask(
+      await _firestoreService.syncTask(
           updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
       notifyListeners();
     }
@@ -193,7 +209,7 @@ class DataService extends ChangeNotifier {
   Future<void> deleteTask(String taskId) async {
     _tasks.removeWhere((t) => t.id == taskId);
     await _saveTasks();
-    await _syncService.removeTask(taskId);
+    await _firestoreService.removeTask(taskId);
     notifyListeners();
   }
 
@@ -216,20 +232,13 @@ class DataService extends ChangeNotifier {
       NotificationService.getPermission();
 
   Future<void> setupBackgroundPush() async {
-    final vapidPublicKey = const String.fromEnvironment(
-      'VAPID_PUBLIC_KEY',
-      defaultValue: '',
-    );
-
-    if (vapidPublicKey.isEmpty) {
-      debugPrint('WARNING: VAPID_PUBLIC_KEY not set. Background push will not work.');
-      return;
-    }
+    // BD9KRxBRpbVGbHeyQu-BlCc74SGzoZCm9vUsy3ukFCNxaFhabmf9XFIV3YkWRJ1sn7XBqpky2snbC2kwgQiQKoY
+    const vapidPublicKey = 'BD9KRxBRpbVGbHeyQu-BlCc74SGzoZCm9vUsy3ukFCNxaFhabmf9XFIV3YkWRJ1sn7XBqpky2snbC2kwgQiQKoY';
 
     try {
-      final subscription = await NotificationService.subscribeToPush(vapidPublicKey);
-      if (subscription != null) {
-        await _syncService.saveSubscription(subscription);
+      final token = await NotificationService.subscribeToPush(vapidPublicKey);
+      if (token != null) {
+        await _firestoreService.saveFcmToken(token);
       }
     } catch (e) {
       debugPrint('Error setting up background push: $e');
