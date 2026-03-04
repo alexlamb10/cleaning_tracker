@@ -49,6 +49,7 @@ class Task {
   final DateTime? lastCompletedDate;
   final DateTime createdAt;
   final double cleanlinessLevel; // 0.0 = dirty, 1.0 = perfectly clean
+  final String? creatorUid;
 
   Task({
     required this.id,
@@ -59,6 +60,7 @@ class Task {
     this.lastCompletedDate,
     required this.createdAt,
     this.cleanlinessLevel = 1.0,
+    this.creatorUid,
   });
 
   int get frequencyDays => frequencyUnit == FrequencyUnit.weeks 
@@ -74,6 +76,7 @@ class Task {
         'lastCompletedDate': lastCompletedDate?.toIso8601String(),
         'createdAt': createdAt.toIso8601String(),
         'cleanlinessLevel': cleanlinessLevel,
+        'creatorUid': creatorUid,
       };
 
   factory Task.fromJson(Map<String, dynamic> json) => Task(
@@ -89,5 +92,6 @@ class Task {
             : null,
         createdAt: DateTime.parse(json['createdAt']),
         cleanlinessLevel: json['cleanlinessLevel'] ?? 1.0,
+        creatorUid: json['creatorUid'],
       );
 }

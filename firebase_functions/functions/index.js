@@ -9,12 +9,12 @@ const db = admin.firestore();
  * Scheduled Function: runs every 30 minutes.
  */
 exports.sendDuePush = functions.pubsub.schedule("every 30 minutes").onRun(async (context) => {
-    const now = new Date().toISOString();
+    const now = admin.firestore.Timestamp.now();
 
-    // 1. Find tasks whose next_due_date has passed
-    console.log("Checking for due tasks at", now);
+    // 1. Find tasks whose nextNotification is due
+    console.log("Checking for due tasks at", now.toDate().toISOString());
     const tasksSnapshot = await db.collection("push_tasks")
-        .where("next_due_date", "<=", now)
+        .where("nextNotification", "<=", now)
         .get();
 
     if (tasksSnapshot.empty) {
@@ -27,27 +27,34 @@ exports.sendDuePush = functions.pubsub.schedule("every 30 minutes").onRun(async 
         dueTasks.push({ id: doc.id, ...doc.data() });
     });
 
-    // 2. Get all FCM tokens
-    const tokensSnapshot = await db.collection("fcm_tokens").get();
+    console.log(`Sending notifications for ${dueTasks.length} tasks.`);
 
-    if (tokensSnapshot.empty) {
-        console.log("No FCM tokens found.");
-        return null;
-    }
-
-    const tokens = [];
-    tokensSnapshot.forEach(doc => {
-        tokens.push(doc.id); // The token is the document ID
-    });
-
-    console.log(`Sending notifications for ${dueTasks.length} tasks to ${tokens.length} devices.`);
-
-    // 3. Send notifications
+    // 2. Iterate through tasks and send targeted notifications
     for (const task of dueTasks) {
+        if (!task.creatorUid) {
+            console.log(`Task ${task.name} (${task.id}) has no creatorUid. Skipping.`);
+            continue;
+        }
+
+        // Find tokens for this specific user
+        const tokensSnapshot = await db.collection("fcm_tokens")
+            .where("userId", "==", task.creatorUid)
+            .get();
+
+        if (tokensSnapshot.empty) {
+            console.log(`No tokens found for user ${task.creatorUid} (Task: ${task.name}).`);
+            continue;
+        }
+
+        const tokens = [];
+        tokensSnapshot.forEach(doc => {
+            tokens.push(doc.id); // The token is the document ID
+        });
+
         const message = {
             notification: {
                 title: "CleanTrack Reminder",
-                body: `Time to clean: ${task.task_name}`
+                body: `Time to clean: ${task.name}`
             },
             data: {
                 taskId: task.id,
@@ -58,16 +65,13 @@ exports.sendDuePush = functions.pubsub.schedule("every 30 minutes").onRun(async 
 
         try {
             const response = await admin.messaging().sendEachForMulticast(message);
-            console.log(`Successfully sent message for ${task.task_name}:`, response.successCount);
+            console.log(`Successfully sent message for ${task.name} to user ${task.creatorUid}:`, response.successCount);
 
             if (response.failureCount > 0) {
-                console.log(`Failed tokens for ${task.task_name}: ${response.failureCount}`);
+                console.log(`Failed tokens for ${task.name}: ${response.failureCount}`);
             }
-
-            // 4. Mark task as updated (optional: update next due date or last notified)
-            // For now we just log success. 
         } catch (e) {
-            console.error(`Error sending message for ${task.task_name}:`, e);
+            console.error(`Error sending message for ${task.name}:`, e);
         }
     }
 

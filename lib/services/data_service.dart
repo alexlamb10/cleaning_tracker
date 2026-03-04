@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:cleaning_tracker/models/models.dart';
 import 'package:cleaning_tracker/services/firestore_service.dart';
@@ -14,11 +15,15 @@ class DataService extends ChangeNotifier {
   static const _uuid = Uuid();
 
   final FirestoreService _firestoreService = FirestoreService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   List<Room> _rooms = [];
   List<Task> _tasks = [];
+  String? _currentUserId;
 
   List<Room> get rooms => _rooms;
   List<Task> get tasks => _tasks;
+  String? get currentUserId => _currentUserId;
 
   DataService() {
     _initForegroundMessaging();
@@ -31,14 +36,26 @@ class DataService extends ChangeNotifier {
 
       if (message.notification != null) {
         debugPrint('Message also contained a notification: ${message.notification}');
-        // You could show a local snackbar here if desired, 
-        // but per instructions we avoid UI updates.
       }
     });
   }
 
+  Future<void> _initializeAuth() async {
+    try {
+      if (_auth.currentUser == null) {
+        await _auth.signInAnonymously();
+      }
+      _currentUserId = _auth.currentUser?.uid;
+      debugPrint('Authenticated as: $_currentUserId');
+    } catch (e) {
+      debugPrint('Error signing in anonymously: $e');
+    }
+  }
+
   /// Public so main() can await it before runApp(), preventing empty-list flash.
   Future<void> loadData() async {
+    await _initializeAuth();
+
     final prefs = await SharedPreferences.getInstance();
 
     final roomsJson = prefs.getString(_roomsKey);
@@ -51,8 +68,42 @@ class DataService extends ChangeNotifier {
     if (tasksJson != null) {
       final List decoded = jsonDecode(tasksJson);
       _tasks = decoded.map((json) => Task.fromJson(json)).toList();
+
+      // Silent Migration: "Stamp" local tasks with the current UID if missing.
+      bool migrated = false;
+      if (_currentUserId != null) {
+        for (int i = 0; i < _tasks.length; i++) {
+          final task = _tasks[i];
+          if (task.creatorUid == null) {
+            _tasks[i] = Task(
+              id: task.id,
+              name: task.name,
+              roomId: task.roomId,
+              frequencyValue: task.frequencyValue,
+              frequencyUnit: task.frequencyUnit,
+              lastCompletedDate: task.lastCompletedDate,
+              createdAt: task.createdAt,
+              cleanlinessLevel: task.cleanlinessLevel,
+              creatorUid: _currentUserId,
+            );
+            migrated = true;
+            // Immediate sync to Firestore for each migrated task.
+            await _firestoreService.syncTask(
+                _tasks[i], _getNotificationDate(getNextDueDate(_tasks[i])), _currentUserId);
+          }
+        }
+      }
+      if (migrated) {
+        await _saveTasks();
+      }
     }
     notifyListeners();
+
+    // Register token with the UID.
+    final token = await NotificationService.getToken('BD9KRxBRpbVGbHeyQu-BlCc74SGzoZCm9vUsy3ukFCNxaFhabmf9XFIV3YkWRJ1sn7XBqpky2snbC2kwgQiQKoY');
+    if (token != null && _currentUserId != null) {
+      await _firestoreService.saveFcmToken(token, _currentUserId);
+    }
   }
 
   Future<void> _saveRooms() async {
@@ -127,11 +178,13 @@ class DataService extends ChangeNotifier {
       lastCompletedDate: lastCompleted,
       createdAt: DateTime.now(),
       cleanlinessLevel: 1.0, // Anchor at 1.0; decay is calculated purely from lastCompletedDate
+      creatorUid: _currentUserId,
     );
 
     _tasks.add(task);
     await _saveTasks();
-    await _firestoreService.syncTask(task, _getNotificationDate(getNextDueDate(task)));
+    await _firestoreService.syncTask(
+        task, _getNotificationDate(getNextDueDate(task)), _currentUserId);
     notifyListeners();
   }
 
@@ -148,11 +201,12 @@ class DataService extends ChangeNotifier {
         lastCompletedDate: DateTime.now(),
         createdAt: task.createdAt,
         cleanlinessLevel: 1.0,
+        creatorUid: _currentUserId,
       );
       await _saveTasks();
       final updatedTask = _tasks[index];
-      await _firestoreService.syncTask(
-          updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
+      await _firestoreService.syncTask(updatedTask,
+          _getNotificationDate(getNextDueDate(updatedTask)), _currentUserId);
       notifyListeners();
     }
   }
@@ -176,12 +230,13 @@ class DataService extends ChangeNotifier {
         lastCompletedDate: lastCompletedDate,
         createdAt: task.createdAt,
         cleanlinessLevel: 1.0, // Anchor at 1.0; decay is calculated purely from lastCompletedDate
+        creatorUid: _currentUserId,
       );
       await _saveTasks();
 
       final updatedTask = _tasks[index];
-      await _firestoreService.syncTask(
-          updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
+      await _firestoreService.syncTask(updatedTask,
+          _getNotificationDate(getNextDueDate(updatedTask)), _currentUserId);
       notifyListeners();
     }
   }
@@ -200,11 +255,12 @@ class DataService extends ChangeNotifier {
         lastCompletedDate: task.lastCompletedDate,
         createdAt: task.createdAt,
         cleanlinessLevel: task.cleanlinessLevel,
+        creatorUid: _currentUserId,
       );
       await _saveTasks();
       final updatedTask = _tasks[index];
-      await _firestoreService.syncTask(
-          updatedTask, _getNotificationDate(getNextDueDate(updatedTask)));
+      await _firestoreService.syncTask(updatedTask,
+          _getNotificationDate(getNextDueDate(updatedTask)), _currentUserId);
       notifyListeners();
     }
   }
@@ -241,7 +297,7 @@ class DataService extends ChangeNotifier {
     try {
       final token = await NotificationService.subscribeToPush(vapidPublicKey);
       if (token != null) {
-        await _firestoreService.saveFcmToken(token);
+        await _firestoreService.saveFcmToken(token, _currentUserId);
       }
     } catch (e) {
       debugPrint('Error setting up background push: $e');
